@@ -555,8 +555,8 @@ const handleReset = () => {
           {step === 1 && (
             <section
               style={{
-                border: `1px solid ${COLORS.border}`,
-                background: COLORS.surface,
+                border: "1px solid rgba(255,255,255,0.6)",
+                background: "linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)",
                 borderRadius: 24,
                 padding: 20,
                 boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
@@ -769,7 +769,7 @@ const handleReset = () => {
 
     background: selected
       ? opt.bg
-      : "rgba(255,255,255,0.7)",
+      : "rgba(255,255,255,0.55)",
 
     color: selected ? "white" : COLORS.text,
     fontWeight: 700,
@@ -777,8 +777,8 @@ const handleReset = () => {
 
     cursor: "pointer",
 
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
 
     boxShadow: selected
       ? "0 6px 14px rgba(15,23,42,0.12)"
@@ -967,7 +967,7 @@ const handleReset = () => {
 
     background: selected
       ? opt.bg
-      : "rgba(255,255,255,0.7)",
+      : "rgba(255,255,255,0.55)",
 
     color: selected ? "white" : COLORS.text,
     fontWeight: 700,
@@ -975,8 +975,8 @@ const handleReset = () => {
 
     cursor: "pointer",
 
-    backdropFilter: "blur(10px)",
-    WebkitBackdropFilter: "blur(10px)",
+    backdropFilter: "blur(14px)",
+    WebkitBackdropFilter: "blur(14px)",
 
     boxShadow: selected
       ? "0 6px 14px rgba(15,23,42,0.12)"
@@ -1081,7 +1081,7 @@ const handleReset = () => {
                         marginTop: 12,
                         padding: "10px 12px",
                         borderRadius: 12,
-                        background: "rgba(255,255,255,0.7)",
+                        background: "rgba(255,255,255,0.55)",
                         border: `1px solid ${COLORS.border}`,
                         fontWeight: 700,
                       }}
