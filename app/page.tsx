@@ -477,9 +477,15 @@ export default function Home() {
         {step === 2 && (
           <section>
             <h2 style={{ marginBottom: 8 }}>2. Snelle selectie per studie</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Alleen de minimale vragen om te bepalen of een studie nog plausibel is.
-            </p>
+            <p style={{ color: COLORS.textSoft, marginTop: 0, marginBottom: 6 }}>
+  Alleen de minimale vragen om te bepalen of een studie nog plausibel is.
+</p>
+<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 10 }}>
+  Studies vallen automatisch af op basis van je antwoorden.
+</div>
+<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 6 }}>
+  Onbekend = ok. Dat houdt de sensitiviteit hoog.
+</div>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
               {candidateStudies.map((study: any) => {
@@ -498,15 +504,16 @@ export default function Home() {
 
                 return (
                   <div
-                    key={study.id}
-                    style={{
-                      border: styles.border,
-                      background: styles.bg,
-                      borderRadius: 18,
-                      padding: 18,
-                      opacity: gateStatus.status === "fail" ? 0.8 : 1
-                    }}
-                  >
+  key={study.id}
+  style={{
+    border: styles.border,
+    background: styles.bg,
+    borderRadius: 18,
+    padding: 16,
+    opacity: gateStatus.status === "fail" ? 0.45 : 1,
+    transition: "all 0.2s ease"
+  }}
+>
                     <div
                       style={{
                         display: "inline-block",
@@ -520,10 +527,10 @@ export default function Home() {
                       }}
                     >
                       {gateStatus.status === "pass"
-                        ? "✓ Gate positief"
-                        : gateStatus.status === "pending"
-                        ? "… Nog onvolledig"
-                        : "✕ Valt af"}
+  ? "✓ Verder screenen"
+  : gateStatus.status === "pending"
+  ? "… Nog onvolledig"
+  : "✕ Afgevallen"}
                     </div>
 
                     <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
@@ -544,7 +551,7 @@ export default function Home() {
                             style={{
                               border: `1px solid ${COLORS.border}`,
                               borderRadius: 14,
-                              padding: 14,
+                              padding: 12,
                               background: "white"
                             }}
                           >
@@ -597,108 +604,116 @@ export default function Home() {
             </p>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
-              {studiesForStep3.map((study: any) => {
-                let refinementIds = getRefinementQuestionIds(study);
+  {studiesForStep3.length === 0 ? (
+    <div
+      style={{
+        border: `1px solid ${COLORS.border}`,
+        background: "white",
+        borderRadius: 16,
+        padding: 18,
+        color: COLORS.textSoft,
+        fontWeight: 600
+      }}
+    >
+      Er blijven geen studies over na de snelle selectie.
+    </div>
+  ) : (
+    studiesForStep3.map((study: any) => {
+      let refinementIds = getRefinementQuestionIds(study);
 
-if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
-  refinementIds = refinementIds.filter(
-    (id: string) =>
-      ![
-        "zenith_risk_age70",
-        "zenith_risk_ckd",
-        "zenith_risk_smoker",
-        "zenith_risk_vkf",
-        "zenith_risk_ntprobnp",
-        "zenith_risk_diabetes_obesity"
-      ].includes(id)
-  );
-}
+      if (study.id === "zenith") {
+        const twoRisk = answers["zenith_2risk"];
+        if (!twoRisk || twoRisk === "yes") {
+          refinementIds = ["zenith_2risk"];
+        }
+      }
+
+      return (
+        <div
+          key={study.id}
+          style={{
+            border: `1px solid ${COLORS.border}`,
+            background: COLORS.surfaceSoft,
+            borderRadius: 18,
+            padding: 16
+          }}
+        >
+          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
+            {study.title}
+          </div>
+          <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
+            {study.subtitle}
+          </div>
+
+          {refinementIds.length === 0 ? (
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "white",
+                border: `1px solid ${COLORS.border}`,
+                color: COLORS.textSoft,
+                fontWeight: 600
+              }}
+            >
+              Geen verdere verfijning nodig voor deze studie.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 14 }}>
+              {refinementIds.map((questionId: string) => {
+                const q = questionMap.get(questionId);
+                if (!q) return null;
 
                 return (
                   <div
-                    key={study.id}
+                    key={questionId}
                     style={{
                       border: `1px solid ${COLORS.border}`,
-                      background: COLORS.surfaceSoft,
-                      borderRadius: 18,
-                      padding: 18
+                      borderRadius: 14,
+                      padding: 12,
+                      background: "white"
                     }}
                   >
-                    <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-                      {study.title}
-                    </div>
-                    <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
-                      {study.subtitle}
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>
+                      {q.label}
                     </div>
 
-                    {refinementIds.length === 0 ? (
-                      <div
-                        style={{
-                          padding: 14,
-                          borderRadius: 12,
-                          background: "white",
-                          border: `1px solid ${COLORS.border}`,
-                          color: COLORS.textSoft,
-                          fontWeight: 600
-                        }}
-                      >
-                        Geen verdere verfijning nodig voor deze studie.
-                      </div>
-                    ) : (
-                      <div style={{ display: "grid", gap: 14 }}>
-                        {refinementIds.map((questionId: string) => {
-                          const q = questionMap.get(questionId);
-                          if (!q) return null;
-
-                          return (
-                            <div
-                              key={questionId}
-                              style={{
-                                border: `1px solid ${COLORS.border}`,
-                                borderRadius: 14,
-                                padding: 14,
-                                background: "white"
-                              }}
-                            >
-                              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
-                                {q.label}
-                              </div>
-
-                              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                                {answerOptions.map((opt) => {
-                                  const selected = answers[questionId] === opt.value;
-                                  return (
-                                    <button
-                                      key={opt.value}
-                                      type="button"
-                                      onClick={() => setAnswer(questionId, opt.value)}
-                                      style={{
-                                        minWidth: 105,
-                                        padding: "10px 14px",
-                                        borderRadius: 12,
-                                        border: selected
-                                          ? `2px solid ${opt.bg}`
-                                          : `1px solid ${COLORS.border}`,
-                                        background: selected ? opt.bg : "white",
-                                        color: selected ? "white" : COLORS.text,
-                                        fontWeight: 700,
-                                        cursor: "pointer"
-                                      }}
-                                    >
-                                      {opt.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {answerOptions.map((opt) => {
+                        const selected = answers[questionId] === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setAnswer(questionId, opt.value)}
+                            style={{
+                              minWidth: 105,
+                              padding: "10px 14px",
+                              borderRadius: 12,
+                              border: selected
+                                ? `2px solid ${opt.bg}`
+                                : `1px solid ${COLORS.border}`,
+                              background: selected ? opt.bg : "white",
+                              color: selected ? "white" : COLORS.text,
+                              fontWeight: 700,
+                              cursor: "pointer"
+                            }}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
             </div>
+          )}
+        </div>
+      );
+    })
+  )}
+</div>
           </section>
         )}
 
@@ -710,7 +725,15 @@ if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
             </p>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
-              {candidateStudies.map((study: any) => {
+              {[...candidateStudies]
+  .sort((a: any, b: any) => {
+    const order: Record<string, number> = { green: 0, orange: 1, red: 2 };
+    return (
+      order[evaluateStudy(a, answers).tone] -
+      order[evaluateStudy(b, answers).tone]
+    );
+  })
+  .map((study: any) => {
                 const result = evaluateStudy(study, answers);
                 const styles = toneStyles(result.tone);
 
@@ -754,9 +777,17 @@ if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
                       {study.subtitle}
                     </div>
 
-                    <div style={{ fontSize: 15, marginBottom: 10 }}>
-                      <strong>Waarom:</strong> {result.reason}
-                    </div>
+                    <div
+  style={{
+    fontSize: 15,
+    marginBottom: 10,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "rgba(255,255,255,0.6)"
+  }}
+>
+  <strong>Waarom:</strong> {result.reason}
+</div>
 
                     <div style={{ fontSize: 15, marginBottom: 10 }}>
                       <strong>Studie:</strong> {study.synopsis}
@@ -766,9 +797,19 @@ if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
                       <strong>Pitch naar patiënt:</strong> {study.pitch}
                     </div>
 
-                    <div style={{ fontSize: 15 }}>
-                      <strong>Contact:</strong> {study.contact}
-                    </div>
+                    <div
+  style={{
+    fontSize: 15,
+    marginTop: 12,
+    padding: "10px 12px",
+    borderRadius: 12,
+    background: "rgba(255,255,255,0.7)",
+    border: `1px solid ${COLORS.border}`,
+    fontWeight: 700
+  }}
+>
+  👉 Contacteer studieteam: {study.contact}
+</div>
                   </div>
                 );
               })}
@@ -814,22 +855,30 @@ if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
           )}
 
           {step === 2 && (
-            <button
-              type="button"
-              onClick={() => setStep(3)}
-              style={{
-                padding: "12px 18px",
-                borderRadius: 14,
-                border: "none",
-                background: COLORS.primaryDark,
-                color: "white",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Verder naar verfijning
-            </button>
-          )}
+  <button
+    type="button"
+    onClick={() => {
+      if (studiesForStep3.length === 0 || studiesWithRefinement.length === 0) {
+        setStep(4);
+      } else {
+        setStep(3);
+      }
+    }}
+    style={{
+      padding: "12px 18px",
+      borderRadius: 14,
+      border: "none",
+      background: COLORS.primaryDark,
+      color: "white",
+      cursor: "pointer",
+      fontWeight: 700
+    }}
+  >
+    {studiesForStep3.length === 0 || studiesWithRefinement.length === 0
+      ? "Toon resultaten"
+      : "Verder naar verfijning"}
+  </button>
+)}
 
           {step === 3 && (
             <button
