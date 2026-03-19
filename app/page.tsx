@@ -407,13 +407,28 @@ const studiesWithRefinement = useMemo(() => {
             border: `1px solid ${COLORS.border}`
           }}
         >
-          <div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 8, fontWeight: 700 }}>
-            UZ Leuven – interne pre-screening tool
-          </div>
-          <h1 style={{ margin: 0, fontSize: 30 }}>Study Pre-Screener V4</h1>
-          <div style={{ marginTop: 10, color: COLORS.textSoft, fontSize: 16 }}>
-            Snelle studie-specifieke triage met hoge sensitiviteit
-          </div>
+          <div style={{ marginBottom: 24 }}>
+  <div
+    style={{
+      fontSize: 28,
+      fontWeight: 900,
+      letterSpacing: -0.5,
+      color: COLORS.primaryDark
+    }}
+  >
+    StudyBuddy
+  </div>
+
+  <div
+    style={{
+      fontSize: 14,
+      color: COLORS.textSoft,
+      marginTop: 4
+    }}
+  >
+    Clinical study pre-screening
+  </div>
+</div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
@@ -493,16 +508,7 @@ const studiesWithRefinement = useMemo(() => {
         {step === 2 && (
           <section>
             <h2 style={{ marginBottom: 8 }}>2. Snelle selectie per studie</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0, marginBottom: 6 }}>
-  Alleen de minimale vragen om te bepalen of een studie nog plausibel is.
-</p>
-<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 10 }}>
-  Studies vallen automatisch af op basis van je antwoorden.
-</div>
-<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 6 }}>
-  Onbekend = ok. Dat houdt de sensitiviteit hoog.
-</div>
-
+            
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
               {candidateStudies.map((study: any) => {
                 const gateStatus = getGateStatus(study, answers);
@@ -615,15 +621,6 @@ const studiesWithRefinement = useMemo(() => {
         {step === 3 && (
           <section>
             <h2 style={{ marginBottom: 8 }}>3. Verfijning voor overblijvende studies</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0, marginBottom: 6 }}>
-  Alleen studies die de snelle selectie overleven, worden verder uitgediept.
-</p>
-<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 10 }}>
-  De status van elke studie wordt live aangepast tijdens het beantwoorden.
-</div>
-<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 6 }}>
-  Studies kunnen hier nog versterken, onzeker blijven of afvallen.
-</div>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
   {studiesForStep3.length === 0 ? (
@@ -877,8 +874,8 @@ return (
               type="button"
               onClick={() => setStep((step - 1) as Step)}
               style={{
-                padding: "12px 18px",
-                borderRadius: 14,
+                padding: "12px 20px",
+borderRadius: 999,
                 border: `1px solid ${COLORS.border}`,
                 background: "white",
                 cursor: "pointer",
@@ -895,8 +892,8 @@ return (
               disabled={!canGoFromStep1}
               onClick={() => setStep(2)}
               style={{
-                padding: "12px 18px",
-                borderRadius: 14,
+           padding: "12px 20px",
+borderRadius: 999,
                 border: "none",
                 background: canGoFromStep1 ? COLORS.primaryDark : COLORS.gray,
                 color: "white",
@@ -919,8 +916,8 @@ return (
       }
     }}
     style={{
-      padding: "12px 18px",
-      borderRadius: 14,
+padding: "12px 20px",
+borderRadius: 999,
       border: "none",
       background: COLORS.primaryDark,
       color: "white",
@@ -939,8 +936,8 @@ return (
               type="button"
               onClick={() => setStep(4)}
               style={{
-                padding: "12px 18px",
-                borderRadius: 14,
+                padding: "12px 20px",
+borderRadius: 999,
                 border: "none",
                 background: COLORS.primaryDark,
                 color: "white",
@@ -957,8 +954,8 @@ return (
               type="button"
               onClick={resetAll}
               style={{
-                padding: "12px 18px",
-                borderRadius: 14,
+                padding: "12px 20px",
+borderRadius: 999,
                 border: "none",
                 background: COLORS.black,
                 color: "white",
