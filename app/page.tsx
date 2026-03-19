@@ -600,22 +600,24 @@ transition: "all 0.25s ease",
                             type="button"
                             onClick={() => toggleProblem(opt.value)}
                             style={{
-                              width: "100%",
-                              textAlign: "left",
-                              padding: "16px 18px",
-                              borderRadius: 18,
-                              border: selected
-                                ? `2px solid ${COLORS.primaryDark}`
-                                : `1px solid ${COLORS.border}`,
-                              background: selected ? COLORS.primarySoft : "white",
-                              color: COLORS.text,
-                              fontSize: 16,
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                            }}
+  width: "100%",
+  textAlign: "left",
+  padding: "16px 18px",
+  borderRadius: 18,
+  border: selected
+    ? `2px solid ${COLORS.primaryDark}`
+    : `1px solid ${COLORS.border}`,
+  background: selected ? COLORS.primarySoft : "white",
+  color: COLORS.text,
+  fontSize: 16,
+  fontWeight: 700,
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+  boxShadow: selected
+    ? "0 0 0 2px rgba(14,165,233,0.12), 0 4px 14px rgba(15,23,42,0.06)"
+    : "0 2px 8px rgba(15,23,42,0.03)",
+}}
                           >
-                            {selected ? "✓ " : ""}
                             {opt.label}
                           </button>
                         );
