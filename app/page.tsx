@@ -161,6 +161,25 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
     missing = true;
   }
 
+  // Nieuwe snelle samenvattende vraag
+  const twoRisk = answers["zenith_2risk"];
+
+  if (twoRisk === "yes") {
+    return {
+      symbol: missing ? "⚠️" : "✅",
+      label: missing ? "Mogelijke match" : "Sterke match",
+      reason: missing
+        ? "Hoog-risicoprofiel waarschijnlijk aanwezig, maar nog te verifiëren criteria"
+        : "Minstens 2 relevante risicofactoren aanwezig, geen harde exclusie gevonden",
+      tone: missing ? "orange" : "green"
+    };
+  }
+
+  if (twoRisk === "unknown" || !twoRisk) {
+    missing = true;
+  }
+
+  // Alleen detailcheck als snelle vraag niet positief is
   const factors = [
     "zenith_risk_age70",
     "zenith_risk_ckd",
@@ -579,7 +598,21 @@ export default function Home() {
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
               {studiesForStep3.map((study: any) => {
-                const refinementIds = getRefinementQuestionIds(study);
+                let refinementIds = getRefinementQuestionIds(study);
+
+if (study.id === "zenith" && answers["zenith_2risk"] === "yes") {
+  refinementIds = refinementIds.filter(
+    (id: string) =>
+      ![
+        "zenith_risk_age70",
+        "zenith_risk_ckd",
+        "zenith_risk_smoker",
+        "zenith_risk_vkf",
+        "zenith_risk_ntprobnp",
+        "zenith_risk_diabetes_obesity"
+      ].includes(id)
+  );
+}
 
                 return (
                   <div

@@ -43,13 +43,14 @@ export const config = {
     { id: "zenith_risk_ckd", label: "Chronisch nierlijden (eGFR <60)?" },
     { id: "zenith_risk_smoker", label: "Actieve roker?" },
     { id: "zenith_risk_vkf", label: "Voorkamerfibrillatie (VKF)?" },
+{ id: "zenith_2risk", label: "Minstens 2 van volgende RF aanwezig: leeftijd ≥70, eGFR <60, roker, VKF, NT-proBNP >125, diabetes/obesitas?" },
     { id: "zenith_risk_ntprobnp", label: "NT-proBNP >125 pg/mL?" },
     { id: "zenith_risk_diabetes_obesity", label: "Diabetes en/of obesitas?" },
 
     // ===== BACKBEAT =====
     { id: "pm_medtronic_dual", label: "Dual-chamber pacemaker van Medtronic?" },
-    { id: "bp_office_range", label: "Office bloeddruk binnen inclusierange?" },
-{ id: "bp_ambulatory_range", label: "24-uurs bloeddruk binnen inclusierange?" },
+{ id: "bp_office_range", label: "Office systolische BD 135–179 mmHg?" },
+{ id: "bp_ambulatory_range", label: "Gemiddelde 24-uurs systolische BD 130–169 mmHg?" },
     { id: "persistent_af", label: "Persisterende of permanente VKF?" },
     { id: "advanced_hf", label: "Gevorderd hartfalen (NYHA III+ of LVEF <50%)?" },
 
@@ -111,6 +112,7 @@ export const config = {
         any: [],
         optional: [
           "established_cvd",
+"zenith_2risk",
           "zenith_age55",
           "zenith_risk_age70",
           "zenith_risk_ckd",
