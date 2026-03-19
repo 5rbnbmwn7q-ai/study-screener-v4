@@ -48,7 +48,8 @@ export const config = {
 
     // ===== BACKBEAT =====
     { id: "pm_medtronic_dual", label: "Dual-chamber pacemaker van Medtronic?" },
-    { id: "bp_in_range", label: "Bloeddruk in inclusierange (office + ambulant gecombineerd)?" },
+    { id: "bp_office_range", label: "Office bloeddruk binnen inclusierange?" },
+{ id: "bp_ambulatory_range", label: "24-uurs bloeddruk binnen inclusierange?" },
     { id: "persistent_af", label: "Persisterende of permanente VKF?" },
     { id: "advanced_hf", label: "Gevorderd hartfalen (NYHA III+ of LVEF <50%)?" },
 
@@ -72,10 +73,8 @@ export const config = {
     // ===== TRICONOS =====
     { id: "triconos_secondary", label: "Secundaire preventie (gekend cardiovasculair lijden / vroeger event)?" },
     { id: "triconos_primary_high", label: "Hoog / zeer hoog cardiovasculair risico in primaire preventie?" },
-    { id: "bempedoic", label: "Recente start van bempedoic acid of plan om dit te starten?" },
-    { id: "bempedoic_4w", label: "Binnen 4 weken van start bempedoic acid?" },
-    { id: "statin", label: "Gebruik of geplande start van statine?" },
-    { id: "ezetimibe", label: "Gebruik of geplande start van ezetimibe?" },
+{ id: "bempedoic_recent_or_planned", label: "Recente (<4 weken) start van bempedoic acid of plan om dit te starten?" },
+{ id: "statin_and_ezetimibe", label: "Gebruik of geplande start van zowel statine als ezetimibe naast bempedoic acid?" },
     { id: "pcsk9", label: "PCSK9 monoclonal antibody in de laatste 3 maanden?" },
     { id: "inclisiran", label: "Ooit inclisiran gekregen?" },
 
@@ -128,26 +127,27 @@ export const config = {
       contact: DEFAULT_CONTACT
     },
 
-    {
-      id: "backbeat",
-      title: "BACKBEAT",
-      subtitle: "Hypertensie + dual-chamber Medtronic pacemaker",
-      problemTags: ["hypertension"],
-      gate: {
-        all: ["ht_uncontrolled", "pm_medtronic_dual", "bp_in_range"]
-      },
-      hard_exclusions: ["persistent_af", "advanced_hf", "dialysis"],
-      refinement: {
-        all: [],
-        any: [],
-        optional: []
-      },
-      synopsis:
-        "Studie bij patiënten met onvoldoende gecontroleerde hypertensie en een dual-chamber Medtronic pacemaker.",
-      pitch:
-        "Er loopt een studie voor patiënten met hypertensie en een compatibele pacemaker.",
-      contact: DEFAULT_CONTACT
-    },
+{
+  id: "backbeat",
+  title: "BACKBEAT",
+  subtitle: "Hypertensie + dual-chamber Medtronic pacemaker",
+  problemTags: ["hypertension"],
+  gate: {
+    all: ["ht_uncontrolled", "pm_medtronic_dual"],
+    any: ["bp_office_range", "bp_ambulatory_range"]
+  },
+  hard_exclusions: ["persistent_af", "advanced_hf", "dialysis"],
+  refinement: {
+    all: [],
+    any: [],
+    optional: []
+  },
+  synopsis:
+    "Studie bij patiënten met onvoldoende gecontroleerde hypertensie en een dual-chamber Medtronic pacemaker.",
+  pitch:
+    "Er loopt een studie voor patiënten met hypertensie en een compatibele pacemaker.",
+  contact: DEFAULT_CONTACT
+},
 
     {
       id: "aspire",
@@ -213,26 +213,26 @@ export const config = {
       contact: DEFAULT_CONTACT
     },
 
-    {
-      id: "triconos",
-      title: "TRICONOS",
-      subtitle: "Triple lipidenverlagende therapie met bempedoic acid",
-      problemTags: ["dyslipidemia"],
-      gate: {
-        all: ["bempedoic"]
-      },
-      hard_exclusions: ["pcsk9", "inclisiran"],
-      refinement: {
-        all: ["statin", "ezetimibe", "bempedoic_4w"],
-        any: ["triconos_secondary", "triconos_primary_high"],
-        optional: []
-      },
-      synopsis:
-        "Studie bij patiënten die starten of gepland zijn voor bempedoic acid binnen een 3-ledig lipidenverlagend schema.",
-      pitch:
-        "Er loopt een studie voor patiënten die op bempedoic acid-gebaseerde triple therapie uitkomen.",
-      contact: DEFAULT_CONTACT
-    },
+{
+  id: "triconos",
+  title: "TRICONOS",
+  subtitle: "Triple lipidenverlagende therapie met bempedoic acid",
+  problemTags: ["dyslipidemia"],
+  gate: {
+    all: ["bempedoic_recent_or_planned"]
+  },
+  hard_exclusions: ["pcsk9", "inclisiran"],
+  refinement: {
+    all: ["statin_and_ezetimibe"],
+    any: ["triconos_secondary", "triconos_primary_high"],
+    optional: []
+  },
+  synopsis:
+    "Studie bij patiënten die starten of gepland zijn voor bempedoic acid binnen een 3-ledig lipidenverlagend schema.",
+  pitch:
+    "Er loopt een studie voor patiënten die op bempedoic acid-gebaseerde triple therapie uitkomen.",
+  contact: DEFAULT_CONTACT
+},
 
     {
       id: "maritime_cv",
