@@ -20,13 +20,12 @@ const COLORS = {
   unknown: "#D97706",
   black: "#111111",
   gray: "#94A3B8",
-  muted: "#CBD5E1"
 };
 
 const answerOptions: { value: AnswerValue; label: string; bg: string }[] = [
   { value: "yes", label: "Ja", bg: COLORS.yes },
   { value: "no", label: "Nee", bg: COLORS.no },
-  { value: "unknown", label: "Onbekend", bg: COLORS.unknown }
+  { value: "unknown", label: "Onbekend", bg: COLORS.unknown },
 ];
 
 function unique<T>(items: T[]): T[] {
@@ -46,33 +45,23 @@ function evaluateAll(ids: string[], answers: Record<string, AnswerValue>) {
 
   for (const id of ids || []) {
     const answer = answers[id];
-    if (answer === "no") {
-      return { status: "fail" as const };
-    }
-    if (!answer || answer === "unknown") {
-      pending = true;
-    }
+    if (answer === "no") return { status: "fail" as const };
+    if (!answer || answer === "unknown") pending = true;
   }
 
   return { status: pending ? ("pending" as const) : ("pass" as const) };
 }
 
 function evaluateAny(ids: string[], answers: Record<string, AnswerValue>) {
-  if (!ids || ids.length === 0) {
-    return { status: "not_needed" as const };
-  }
+  if (!ids || ids.length === 0) return { status: "not_needed" as const };
 
   let anyYes = false;
   let anyUnknown = false;
 
   for (const id of ids) {
     const answer = answers[id];
-    if (answer === "yes") {
-      anyYes = true;
-    }
-    if (!answer || answer === "unknown") {
-      anyUnknown = true;
-    }
+    if (answer === "yes") anyYes = true;
+    if (!answer || answer === "unknown") anyUnknown = true;
   }
 
   if (anyYes) return { status: "pass" as const };
@@ -83,31 +72,19 @@ function evaluateAny(ids: string[], answers: Record<string, AnswerValue>) {
 function getGateStatus(study: any, answers: Record<string, AnswerValue>) {
   const allResult = evaluateAll(study.gate?.all || [], answers);
   if (allResult.status === "fail") {
-    return {
-      status: "fail" as const,
-      reason: "Afgevallen op snelle selectie"
-    };
+    return { status: "fail" as const, reason: "Afgevallen op snelle selectie" };
   }
 
   const anyResult = evaluateAny(study.gate?.any || [], answers);
   if (anyResult.status === "fail") {
-    return {
-      status: "fail" as const,
-      reason: "Afgevallen op snelle selectie"
-    };
+    return { status: "fail" as const, reason: "Afgevallen op snelle selectie" };
   }
 
   if (allResult.status === "pending" || anyResult.status === "pending") {
-    return {
-      status: "pending" as const,
-      reason: "Nog onvolledige snelle selectie"
-    };
+    return { status: "pending" as const, reason: "Nog onvolledige snelle selectie" };
   }
 
-  return {
-    status: "pass" as const,
-    reason: "Snelle selectie positief"
-  };
+  return { status: "pass" as const, reason: "Snelle selectie positief" };
 }
 
 function getRefinementQuestionIds(study: any) {
@@ -115,7 +92,7 @@ function getRefinementQuestionIds(study: any) {
     ...(study.hard_exclusions || []),
     ...(study.refinement?.all || []),
     ...(study.refinement?.any || []),
-    ...(study.refinement?.optional || [])
+    ...(study.refinement?.optional || []),
   ]);
 }
 
@@ -126,7 +103,7 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
         symbol: "❌",
         label: "Waarschijnlijk niet passend",
         reason: "Harde exclusie aanwezig",
-        tone: "red"
+        tone: "red",
       };
     }
   }
@@ -134,13 +111,12 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
   let missing = false;
 
   const establishedCvd = answers["established_cvd"];
-
   if (establishedCvd === "yes") {
     return {
       symbol: "✅",
       label: "Sterke match",
       reason: "Established cardiovasculair lijden aanwezig, geen harde exclusie gevonden",
-      tone: "green"
+      tone: "green",
     };
   }
 
@@ -154,14 +130,13 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
       symbol: "❌",
       label: "Waarschijnlijk niet passend",
       reason: "Geen established CVD en leeftijd niet passend voor high-risk arm",
-      tone: "red"
+      tone: "red",
     };
   }
   if (!age55 || age55 === "unknown") {
     missing = true;
   }
 
-  // Nieuwe snelle samenvattende vraag
   const twoRisk = answers["zenith_2risk"];
 
   if (twoRisk === "yes") {
@@ -171,7 +146,7 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
       reason: missing
         ? "Hoog-risicoprofiel waarschijnlijk aanwezig, maar nog te verifiëren criteria"
         : "Minstens 2 relevante risicofactoren aanwezig, geen harde exclusie gevonden",
-      tone: missing ? "orange" : "green"
+      tone: missing ? "orange" : "green",
     };
   }
 
@@ -179,14 +154,13 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
     missing = true;
   }
 
-  // Alleen detailcheck als snelle vraag niet positief is
   const factors = [
     "zenith_risk_age70",
     "zenith_risk_ckd",
     "zenith_risk_smoker",
     "zenith_risk_vkf",
     "zenith_risk_ntprobnp",
-    "zenith_risk_diabetes_obesity"
+    "zenith_risk_diabetes_obesity",
   ];
 
   const yesCount = factors.filter((id) => answers[id] === "yes").length;
@@ -199,7 +173,7 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
       reason: missing
         ? "Hoog-risicoprofiel waarschijnlijk aanwezig, maar nog te verifiëren criteria"
         : "Hoog-risicoprofiel aanwezig, geen harde exclusie gevonden",
-      tone: missing ? "orange" : "green"
+      tone: missing ? "orange" : "green",
     };
   }
 
@@ -208,7 +182,7 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
       symbol: "⚠️",
       label: "Mogelijke match",
       reason: "Nog te verifiëren of patiënt voldoet aan high-risk criteria",
-      tone: "orange"
+      tone: "orange",
     };
   }
 
@@ -216,7 +190,7 @@ function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
     symbol: "❌",
     label: "Waarschijnlijk niet passend",
     reason: "Geen established CVD en onvoldoende high-risk criteria",
-    tone: "red"
+    tone: "red",
   };
 }
 
@@ -228,7 +202,7 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
       symbol: "❌",
       label: "Waarschijnlijk niet passend",
       reason: gate.reason,
-      tone: "red"
+      tone: "red",
     };
   }
 
@@ -242,7 +216,7 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
         symbol: "❌",
         label: "Waarschijnlijk niet passend",
         reason: "Harde exclusie aanwezig",
-        tone: "red"
+        tone: "red",
       };
     }
   }
@@ -255,12 +229,10 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
       symbol: "❌",
       label: "Waarschijnlijk niet passend",
       reason: "Essentieel criterium niet aanwezig",
-      tone: "red"
+      tone: "red",
     };
   }
-  if (allResult.status === "pending") {
-    missing = true;
-  }
+  if (allResult.status === "pending") missing = true;
 
   const anyQuestions = study.refinement?.any || [];
   if (anyQuestions.length > 0) {
@@ -270,12 +242,10 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
         symbol: "❌",
         label: "Waarschijnlijk niet passend",
         reason: "Geen passend richtinggevend criterium",
-        tone: "red"
+        tone: "red",
       };
     }
-    if (anyResult.status === "pending") {
-      missing = true;
-    }
+    if (anyResult.status === "pending") missing = true;
   }
 
   if (missing) {
@@ -283,7 +253,7 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
       symbol: "⚠️",
       label: "Mogelijke match",
       reason: "Nog te verifiëren criteria",
-      tone: "orange"
+      tone: "orange",
     };
   }
 
@@ -291,7 +261,7 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
     symbol: "✅",
     label: "Sterke match",
     reason: "Kerncriteria aanwezig, geen harde exclusie gevonden",
-    tone: "green"
+    tone: "green",
   };
 }
 
@@ -300,20 +270,20 @@ function toneStyles(tone: string) {
     return {
       border: "1px solid #BBF7D0",
       bg: "#F0FDF4",
-      badgeBg: "#16A34A"
+      badgeBg: "#16A34A",
     };
   }
   if (tone === "orange") {
     return {
       border: "1px solid #FED7AA",
       bg: "#FFF7ED",
-      badgeBg: "#D97706"
+      badgeBg: "#D97706",
     };
   }
   return {
     border: "1px solid #FECACA",
     bg: "#FEF2F2",
-    badgeBg: "#DC2626"
+    badgeBg: "#DC2626",
   };
 }
 
@@ -327,8 +297,9 @@ export default function Home() {
   const groupedProblems = useMemo(() => {
     const groups: Record<string, any[]> = {};
     for (const option of config.problemOptions) {
-      if (!groups[option.group]) groups[option.group] = [];
-      groups[option.group].push(option);
+      const group = option.group || "Overig";
+      if (!groups[group]) groups[group] = [];
+      groups[group].push(option);
     }
     return groups;
   }, []);
@@ -340,24 +311,32 @@ export default function Home() {
   }, [problems]);
 
   const studiesForStep3 = useMemo(() => {
-    return candidateStudies.filter((study) => getGateStatus(study, answers).status !== "fail");
+    return candidateStudies.filter(
+      (study) => getGateStatus(study, answers).status !== "fail"
+    );
   }, [candidateStudies, answers]);
 
-const studiesWithRefinement = useMemo(() => {
-  return studiesForStep3.filter((study: any) => {
-    let refinementIds = getRefinementQuestionIds(study);
+  const studiesWithRefinement = useMemo(() => {
+    return studiesForStep3.filter((study: any) => {
+      let refinementIds = getRefinementQuestionIds(study);
 
-    if (study.id === "zenith") {
-      const twoRisk = answers["zenith_2risk"];
-
-      if (!twoRisk || twoRisk === "yes") {
-        refinementIds = ["zenith_2risk"];
+      if (study.id === "zenith") {
+        const twoRisk = answers["zenith_2risk"];
+        if (!twoRisk || twoRisk === "yes") {
+          refinementIds = ["zenith_2risk"];
+        }
       }
-    }
 
-    return refinementIds.length > 0;
-  });
-}, [studiesForStep3, answers]);
+      return refinementIds.length > 0;
+    });
+  }, [studiesForStep3, answers]);
+
+  const sortedResultStudies = useMemo(() => {
+    const order: Record<string, number> = { green: 0, orange: 1, red: 2 };
+    return [...candidateStudies].sort((a, b) => {
+      return order[evaluateStudy(a, answers).tone] - order[evaluateStudy(b, answers).tone];
+    });
+  }, [candidateStudies, answers]);
 
   const toggleProblem = (value: string) => {
     setProblems((prev) =>
@@ -377,139 +356,226 @@ const studiesWithRefinement = useMemo(() => {
 
   const canGoFromStep1 = problems.length > 0;
 
+  const stepTitles = {
+    1: "Diagnoses",
+    2: "Selectie",
+    3: "Verfijning",
+    4: "Resultaat",
+  };
+
   return (
     <main
       style={{
         minHeight: "100vh",
         background: "linear-gradient(to bottom, #f5fbfe 0%, #f8fafc 100%)",
-        padding: "24px 16px",
         fontFamily: "Arial, sans-serif",
-        color: COLORS.text
+        color: COLORS.text,
       }}
     >
       <div
         style={{
-          maxWidth: 980,
-          margin: "0 auto",
-          background: COLORS.surface,
-          borderRadius: 24,
-          padding: 24,
-          boxShadow: "0 10px 35px rgba(15, 23, 42, 0.08)",
-          border: `1px solid ${COLORS.border}`
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          background: "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(12px)",
+          borderBottom: `1px solid ${COLORS.border}`,
         }}
       >
         <div
           style={{
-            marginBottom: 24,
-            padding: 20,
-            borderRadius: 20,
-            background: `linear-gradient(135deg, ${COLORS.primarySoft} 0%, white 100%)`,
-            border: `1px solid ${COLORS.border}`
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "14px 16px 12px",
           }}
         >
-          <div style={{ marginBottom: 24 }}>
-  <div
-    style={{
-      fontSize: 28,
-      fontWeight: 900,
-      letterSpacing: -0.5,
-      color: COLORS.primaryDark
-    }}
-  >
-    StudyBuddy
-  </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 28,
+                  fontWeight: 900,
+                  letterSpacing: -0.6,
+                  color: COLORS.primaryDark,
+                }}
+              >
+                StudyBuddy
+              </div>
+              <div
+                style={{
+                  height: 4,
+                  width: 72,
+                  borderRadius: 4,
+                  background: "linear-gradient(90deg, #37C5F3, #D7263D)",
+                  marginTop: 6,
+                }}
+              />
+            </div>
 
-  <div
-    style={{
-      fontSize: 14,
-      color: COLORS.textSoft,
-      marginTop: 4
-    }}
-  >
-    Clinical study pre-screening
-  </div>
-</div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
-          {[1, 2, 3, 4].map((s) => (
             <div
-              key={s}
               style={{
-                padding: "9px 14px",
-                borderRadius: 999,
-                background: step === s ? COLORS.primary : "#E2E8F0",
-                color: step === s ? "white" : "#334155",
+                fontSize: 14,
+                color: COLORS.textSoft,
                 fontWeight: 700,
-                fontSize: 14
               }}
             >
-              Stap {s}
+              Stap {step} van 4 · {stepTitles[step]}
             </div>
-          ))}
+          </div>
+
+          <div
+            style={{
+              marginTop: 12,
+              height: 8,
+              width: "100%",
+              borderRadius: 999,
+              background: "#E2E8F0",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${(step / 4) * 100}%`,
+                background: "linear-gradient(90deg, #37C5F3, #0EA5E9)",
+                borderRadius: 999,
+                transition: "width 0.25s ease",
+              }}
+            />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              marginTop: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            {[1, 2, 3, 4].map((s) => (
+              <div
+                key={s}
+                style={{
+                  padding: "7px 12px",
+                  borderRadius: 999,
+                  background: step === s ? COLORS.primary : "#E2E8F0",
+                  color: step === s ? "white" : "#334155",
+                  fontWeight: 700,
+                  fontSize: 12,
+                }}
+              >
+                {stepTitles[s as 1 | 2 | 3 | 4]}
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {step === 1 && (
-          <section>
-            <h2 style={{ marginBottom: 8 }}>1. Wat zijn de hoofddiagnose(s) of kernproblemen?</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Je kan één of meerdere opties aanduiden.
-            </p>
+      <div
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto",
+          padding: "18px 16px 110px",
+          display: "grid",
+          gap: 20,
+          gridTemplateColumns: "minmax(0, 1fr)",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: 20,
+            gridTemplateColumns: "minmax(0, 1fr)",
+          }}
+        >
+          {step === 1 && (
+            <section
+              style={{
+                border: `1px solid ${COLORS.border}`,
+                background: COLORS.surface,
+                borderRadius: 24,
+                padding: 20,
+                boxShadow: "0 10px 35px rgba(15, 23, 42, 0.06)",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gap: 22,
+                }}
+              >
+                {Object.entries(groupedProblems).map(([groupName, options]) => (
+                  <div key={groupName}>
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: 15,
+                        color: COLORS.text,
+                        marginBottom: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {groupName}
+                    </div>
 
-            <div style={{ display: "grid", gap: 22, marginTop: 18 }}>
-              {Object.entries(groupedProblems).map(([groupName, options]) => (
-                <div key={groupName}>
-                  <div
-                    style={{
-                      fontWeight: 800,
-                      fontSize: 16,
-                      color: COLORS.text,
-                      marginBottom: 10
-                    }}
-                  >
-                    {groupName}
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 12,
+                        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                      }}
+                    >
+                      {options.map((opt: any) => {
+                        const selected = problems.includes(opt.value);
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => toggleProblem(opt.value)}
+                            style={{
+                              width: "100%",
+                              textAlign: "left",
+                              padding: "16px 18px",
+                              borderRadius: 18,
+                              border: selected
+                                ? `2px solid ${COLORS.primaryDark}`
+                                : `1px solid ${COLORS.border}`,
+                              background: selected ? COLORS.primarySoft : "white",
+                              color: COLORS.text,
+                              fontSize: 16,
+                              fontWeight: 700,
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                            }}
+                          >
+                            {selected ? "✓ " : ""}
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
 
-                  <div style={{ display: "grid", gap: 12 }}>
-                    {options.map((opt: any) => {
-                      const selected = problems.includes(opt.value);
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => toggleProblem(opt.value)}
-                          style={{
-                            width: "100%",
-                            textAlign: "left",
-                            padding: "16px 18px",
-                            borderRadius: 18,
-                            border: selected
-                              ? `2px solid ${COLORS.primaryDark}`
-                              : `1px solid ${COLORS.border}`,
-                            background: selected ? COLORS.primarySoft : "white",
-                            color: COLORS.text,
-                            fontSize: 17,
-                            fontWeight: 700,
-                            cursor: "pointer"
-                          }}
-                        >
-                          {selected ? "✓ " : ""}
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
-          <section>
-            <h2 style={{ marginBottom: 8 }}>2. Snelle selectie per studie</h2>
-            
-            <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
+          {step === 2 && (
+            <section
+              style={{
+                display: "grid",
+                gap: 16,
+              }}
+            >
               {candidateStudies.map((study: any) => {
                 const gateStatus = getGateStatus(study, answers);
                 const styles =
@@ -521,48 +587,81 @@ const studiesWithRefinement = useMemo(() => {
 
                 const gateQuestionIds = unique([
                   ...(study.gate?.all || []),
-                  ...(study.gate?.any || [])
+                  ...(study.gate?.any || []),
                 ]);
 
                 return (
                   <div
-  key={study.id}
-  style={{
-    border: styles.border,
-    background: styles.bg,
-    borderRadius: 18,
-    padding: 16,
-    opacity: gateStatus.status === "fail" ? 0.45 : 1,
-    transition: "all 0.2s ease"
-  }}
->
+                    key={study.id}
+                    style={{
+                      border: styles.border,
+                      background: styles.bg,
+                      borderRadius: 24,
+                      padding: 16,
+                      opacity: gateStatus.status === "fail" ? 0.45 : 1,
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+                    }}
+                  >
                     <div
                       style={{
-                        display: "inline-block",
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        background: styles.badgeBg,
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: 13,
-                        marginBottom: 12
+                        display: "flex",
+                        alignItems: "flex-start",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        flexWrap: "wrap",
                       }}
                     >
-                      {gateStatus.status === "pass"
-  ? "✓ Verder screenen"
-  : gateStatus.status === "pending"
-  ? "… Nog onvolledig"
-  : "✕ Afgevallen"}
+                      <div>
+                        <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.3 }}>
+                          {study.title}
+                        </div>
+                        <div style={{ color: COLORS.textSoft, marginTop: 4, fontSize: 14 }}>
+                          {study.subtitle}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "inline-block",
+                          padding: "6px 10px",
+                          borderRadius: 999,
+                          background: styles.badgeBg,
+                          color: "white",
+                          fontWeight: 700,
+                          fontSize: 13,
+                        }}
+                      >
+                        {gateStatus.status === "pass"
+                          ? "✓ Verder screenen"
+                          : gateStatus.status === "pending"
+                          ? "… Nog onvolledig"
+                          : "✕ Afgevallen"}
+                      </div>
                     </div>
 
-                    <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-                      {study.title}
-                    </div>
-                    <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
-                      {study.subtitle}
+                    <div
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.65)",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: COLORS.textSoft,
+                      }}
+                    >
+                      {gateStatus.reason}
                     </div>
 
-                    <div style={{ display: "grid", gap: 14 }}>
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 12,
+                        marginTop: 14,
+                        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                      }}
+                    >
                       {gateQuestionIds.map((questionId: string) => {
                         const q = questionMap.get(questionId);
                         if (!q) return null;
@@ -572,16 +671,29 @@ const studiesWithRefinement = useMemo(() => {
                             key={questionId}
                             style={{
                               border: `1px solid ${COLORS.border}`,
-                              borderRadius: 14,
+                              borderRadius: 16,
                               padding: 12,
-                              background: "white"
+                              background: "white",
                             }}
                           >
-                            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
+                            <div
+                              style={{
+                                fontSize: 15,
+                                fontWeight: 600,
+                                marginBottom: 10,
+                                lineHeight: 1.35,
+                              }}
+                            >
                               {q.label}
                             </div>
 
-                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                              }}
+                            >
                               {answerOptions.map((opt) => {
                                 const selected = answers[questionId] === opt.value;
                                 return (
@@ -590,16 +702,17 @@ const studiesWithRefinement = useMemo(() => {
                                     type="button"
                                     onClick={() => setAnswer(questionId, opt.value)}
                                     style={{
-                                      minWidth: 105,
+                                      minWidth: 96,
+                                      minHeight: 44,
                                       padding: "10px 14px",
-                                      borderRadius: 12,
+                                      borderRadius: 999,
                                       border: selected
                                         ? `2px solid ${opt.bg}`
                                         : `1px solid ${COLORS.border}`,
                                       background: selected ? opt.bg : "white",
                                       color: selected ? "white" : COLORS.text,
                                       fontWeight: 700,
-                                      cursor: "pointer"
+                                      cursor: "pointer",
                                     }}
                                   >
                                     {opt.label}
@@ -614,177 +727,201 @@ const studiesWithRefinement = useMemo(() => {
                   </div>
                 );
               })}
-            </div>
-          </section>
-        )}
-
-        {step === 3 && (
-          <section>
-            <h2 style={{ marginBottom: 8 }}>3. Verfijning voor overblijvende studies</h2>
-
-            <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
-  {studiesForStep3.length === 0 ? (
-    <div
-      style={{
-        border: `1px solid ${COLORS.border}`,
-        background: "white",
-        borderRadius: 16,
-        padding: 18,
-        color: COLORS.textSoft,
-        fontWeight: 600
-      }}
-    >
-      Er blijven geen studies over na de snelle selectie.
-    </div>
-  ) : (
-    studiesForStep3.map((study: any) => {
-      let refinementIds = getRefinementQuestionIds(study);
-
-      if (study.id === "zenith") {
-        const twoRisk = answers["zenith_2risk"];
-        if (!twoRisk || twoRisk === "yes") {
-          refinementIds = ["zenith_2risk"];
-        }
-      }
-
-      const liveResult = evaluateStudy(study, answers);
-const liveStyles = toneStyles(liveResult.tone);
-
-return (
-  <div
-    key={study.id}
-    style={{
-      border: liveStyles.border,
-      background: liveStyles.bg,
-      borderRadius: 18,
-      padding: 16,
-      opacity: liveResult.tone === "red" ? 0.65 : 1,
-      transition: "all 0.2s ease"
-    }}
-  >
-    <div
-      style={{
-        display: "inline-block",
-        padding: "6px 10px",
-        borderRadius: 999,
-        background: liveStyles.badgeBg,
-        color: "white",
-        fontWeight: 700,
-        fontSize: 13,
-        marginBottom: 12
-      }}
-    >
-      {liveResult.symbol} {liveResult.label}
-    </div>
-
-    <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
-      {study.title}
-    </div>
-    <div style={{ color: COLORS.textSoft, marginBottom: 10 }}>
-      {study.subtitle}
-    </div>
-
-    <div
-      style={{
-        fontSize: 14,
-        marginBottom: 14,
-        padding: "8px 10px",
-        borderRadius: 10,
-        background: "rgba(255,255,255,0.55)"
-      }}
-    >
-      <strong>Status:</strong> {liveResult.reason}
-    </div>
-
-          {refinementIds.length === 0 ? (
-            <div
-  style={{
-    padding: 14,
-    borderRadius: 12,
-    background: "white",
-    border: `1px solid ${COLORS.border}`,
-    color: COLORS.textSoft,
-    fontWeight: 600
-  }}
->
-  Geen verdere verfijning nodig voor deze studie. De live status hierboven blijft wel actief.
-</div>
-          ) : (
-            <div style={{ display: "grid", gap: 14 }}>
-              {refinementIds.map((questionId: string) => {
-                const q = questionMap.get(questionId);
-                if (!q) return null;
-
-                return (
-                  <div
-                    key={questionId}
-                    style={{
-                      border: `1px solid ${COLORS.border}`,
-                      borderRadius: 14,
-                      padding: 12,
-                      background: "white"
-                    }}
-                  >
-                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>
-                      {q.label}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                      {answerOptions.map((opt) => {
-                        const selected = answers[questionId] === opt.value;
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setAnswer(questionId, opt.value)}
-                            style={{
-                              minWidth: 105,
-                              padding: "10px 14px",
-                              borderRadius: 12,
-                              border: selected
-                                ? `2px solid ${opt.bg}`
-                                : `1px solid ${COLORS.border}`,
-                              background: selected ? opt.bg : "white",
-                              color: selected ? "white" : COLORS.text,
-                              fontWeight: 700,
-                              cursor: "pointer"
-                            }}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            </section>
           )}
-        </div>
-      );
-    })
-  )}
-</div>
-          </section>
-        )}
 
-        {step === 4 && (
-          <section>
-            <h2 style={{ marginBottom: 8 }}>4. Resultaten</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Suggesties voor verdere beoordeling door het studieteam.
-            </p>
+          {step === 3 && (
+            <section
+              style={{
+                display: "grid",
+                gap: 16,
+              }}
+            >
+              {studiesForStep3.length === 0 ? (
+                <div
+                  style={{
+                    border: `1px solid ${COLORS.border}`,
+                    background: "white",
+                    borderRadius: 20,
+                    padding: 18,
+                    color: COLORS.textSoft,
+                    fontWeight: 600,
+                  }}
+                >
+                  Er blijven geen studies over na de snelle selectie.
+                </div>
+              ) : (
+                studiesForStep3.map((study: any) => {
+                  let refinementIds = getRefinementQuestionIds(study);
 
-            <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
-              {[...candidateStudies]
-  .sort((a: any, b: any) => {
-    const order: Record<string, number> = { green: 0, orange: 1, red: 2 };
-    return (
-      order[evaluateStudy(a, answers).tone] -
-      order[evaluateStudy(b, answers).tone]
-    );
-  })
-  .map((study: any) => {
+                  if (study.id === "zenith") {
+                    const twoRisk = answers["zenith_2risk"];
+                    if (!twoRisk || twoRisk === "yes") {
+                      refinementIds = ["zenith_2risk"];
+                    }
+                  }
+
+                  const liveResult = evaluateStudy(study, answers);
+                  const liveStyles = toneStyles(liveResult.tone);
+
+                  return (
+                    <div
+                      key={study.id}
+                      style={{
+                        border: liveStyles.border,
+                        background: liveStyles.bg,
+                        borderRadius: 24,
+                        padding: 16,
+                        opacity: liveResult.tone === "red" ? 0.65 : 1,
+                        transition: "all 0.2s ease",
+                        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.3 }}>
+                            {study.title}
+                          </div>
+                          <div style={{ color: COLORS.textSoft, marginTop: 4, fontSize: 14 }}>
+                            {study.subtitle}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            display: "inline-block",
+                            padding: "6px 10px",
+                            borderRadius: 999,
+                            background: liveStyles.badgeBg,
+                            color: "white",
+                            fontWeight: 700,
+                            fontSize: 13,
+                          }}
+                        >
+                          {liveResult.symbol} {liveResult.label}
+                        </div>
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 14,
+                          marginTop: 12,
+                          marginBottom: 14,
+                          padding: "10px 12px",
+                          borderRadius: 12,
+                          background: "rgba(255,255,255,0.6)",
+                        }}
+                      >
+                        <strong>Status:</strong> {liveResult.reason}
+                      </div>
+
+                      {refinementIds.length === 0 ? (
+                        <div
+                          style={{
+                            padding: 14,
+                            borderRadius: 14,
+                            background: "white",
+                            border: `1px solid ${COLORS.border}`,
+                            color: COLORS.textSoft,
+                            fontWeight: 600,
+                          }}
+                        >
+                          Geen verdere verfijning nodig voor deze studie. De live status hierboven blijft actief.
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            display: "grid",
+                            gap: 12,
+                            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                          }}
+                        >
+                          {refinementIds.map((questionId: string) => {
+                            const q = questionMap.get(questionId);
+                            if (!q) return null;
+
+                            return (
+                              <div
+                                key={questionId}
+                                style={{
+                                  border: `1px solid ${COLORS.border}`,
+                                  borderRadius: 16,
+                                  padding: 12,
+                                  background: "white",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: 15,
+                                    fontWeight: 600,
+                                    marginBottom: 10,
+                                    lineHeight: 1.35,
+                                  }}
+                                >
+                                  {q.label}
+                                </div>
+
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                  }}
+                                >
+                                  {answerOptions.map((opt) => {
+                                    const selected = answers[questionId] === opt.value;
+                                    return (
+                                      <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => setAnswer(questionId, opt.value)}
+                                        style={{
+                                          minWidth: 96,
+                                          minHeight: 44,
+                                          padding: "10px 14px",
+                                          borderRadius: 999,
+                                          border: selected
+                                            ? `2px solid ${opt.bg}`
+                                            : `1px solid ${COLORS.border}`,
+                                          background: selected ? opt.bg : "white",
+                                          color: selected ? "white" : COLORS.text,
+                                          fontWeight: 700,
+                                          cursor: "pointer",
+                                        }}
+                                      >
+                                        {opt.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </section>
+          )}
+
+          {step === 4 && (
+            <section
+              style={{
+                display: "grid",
+                gap: 16,
+              }}
+            >
+              {sortedResultStudies.map((study: any) => {
                 const result = evaluateStudy(study, answers);
                 const styles = toneStyles(result.tone);
 
@@ -794,8 +931,9 @@ return (
                     style={{
                       border: styles.border,
                       background: styles.bg,
-                      borderRadius: 20,
-                      padding: 20
+                      borderRadius: 24,
+                      padding: 18,
+                      boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
                     }}
                   >
                     <div
@@ -807,13 +945,13 @@ return (
                         color: "white",
                         fontWeight: 700,
                         fontSize: 13,
-                        marginBottom: 12
+                        marginBottom: 12,
                       }}
                     >
                       {result.symbol} {result.label}
                     </div>
 
-                    <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>
+                    <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: -0.3 }}>
                       {study.title}
                     </div>
 
@@ -822,23 +960,24 @@ return (
                         fontSize: 15,
                         color: COLORS.textSoft,
                         fontWeight: 600,
-                        marginBottom: 12
+                        marginTop: 4,
+                        marginBottom: 12,
                       }}
                     >
                       {study.subtitle}
                     </div>
 
                     <div
-  style={{
-    fontSize: 15,
-    marginBottom: 10,
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "rgba(255,255,255,0.6)"
-  }}
->
-  <strong>Waarom:</strong> {result.reason}
-</div>
+                      style={{
+                        fontSize: 15,
+                        marginBottom: 10,
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.6)",
+                      }}
+                    >
+                      <strong>Waarom:</strong> {result.reason}
+                    </div>
 
                     <div style={{ fontSize: 15, marginBottom: 10 }}>
                       <strong>Studie:</strong> {study.synopsis}
@@ -849,123 +988,155 @@ return (
                     </div>
 
                     <div
-  style={{
-    fontSize: 15,
-    marginTop: 12,
-    padding: "10px 12px",
-    borderRadius: 12,
-    background: "rgba(255,255,255,0.7)",
-    border: `1px solid ${COLORS.border}`,
-    fontWeight: 700
-  }}
->
-  👉 Contacteer studieteam: {study.contact}
-</div>
+                      style={{
+                        fontSize: 15,
+                        marginTop: 12,
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.7)",
+                        border: `1px solid ${COLORS.border}`,
+                        fontWeight: 700,
+                      }}
+                    >
+                      👉 Contacteer studieteam: {study.contact}
+                    </div>
                   </div>
                 );
               })}
-            </div>
-          </section>
-        )}
-
-        <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
-          {step > 1 && (
-            <button
-              type="button"
-              onClick={() => setStep((step - 1) as Step)}
-              style={{
-                padding: "12px 20px",
-borderRadius: 999,
-                border: `1px solid ${COLORS.border}`,
-                background: "white",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Vorige
-            </button>
+            </section>
           )}
+        </div>
+      </div>
 
-          {step === 1 && (
-            <button
-              type="button"
-              disabled={!canGoFromStep1}
-              onClick={() => setStep(2)}
-              style={{
-           padding: "12px 20px",
-borderRadius: 999,
-                border: "none",
-                background: canGoFromStep1 ? COLORS.primaryDark : COLORS.gray,
-                color: "white",
-                cursor: canGoFromStep1 ? "pointer" : "not-allowed",
-                fontWeight: 700
-              }}
-            >
-              Verder naar snelle selectie
-            </button>
-          )}
+      <div
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 30,
+          background: "rgba(255,255,255,0.96)",
+          backdropFilter: "blur(12px)",
+          borderTop: `1px solid ${COLORS.border}`,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1180,
+            margin: "0 auto",
+            padding: "12px 16px",
+            display: "flex",
+            gap: 10,
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {step > 1 && (
+              <button
+                type="button"
+                onClick={() => setStep((step - 1) as Step)}
+                style={{
+                  minHeight: 46,
+                  padding: "12px 20px",
+                  borderRadius: 999,
+                  border: `1px solid ${COLORS.border}`,
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Vorige
+              </button>
+            )}
+          </div>
 
-          {step === 2 && (
-  <button
-    type="button"
-    onClick={() => {
-      if (studiesForStep3.length === 0 || studiesWithRefinement.length === 0) {
-        setStep(4);
-      } else {
-        setStep(3);
-      }
-    }}
-    style={{
-padding: "12px 20px",
-borderRadius: 999,
-      border: "none",
-      background: COLORS.primaryDark,
-      color: "white",
-      cursor: "pointer",
-      fontWeight: 700
-    }}
-  >
-    {studiesForStep3.length === 0 || studiesWithRefinement.length === 0
-      ? "Toon resultaten"
-      : "Verder naar verfijning"}
-  </button>
-)}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {step === 1 && (
+              <button
+                type="button"
+                disabled={!canGoFromStep1}
+                onClick={() => setStep(2)}
+                style={{
+                  minHeight: 46,
+                  padding: "12px 20px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: canGoFromStep1 ? COLORS.primaryDark : COLORS.gray,
+                  color: "white",
+                  cursor: canGoFromStep1 ? "pointer" : "not-allowed",
+                  fontWeight: 700,
+                }}
+              >
+                Verder
+              </button>
+            )}
 
-          {step === 3 && (
-            <button
-              type="button"
-              onClick={() => setStep(4)}
-              style={{
-                padding: "12px 20px",
-borderRadius: 999,
-                border: "none",
-                background: COLORS.primaryDark,
-                color: "white",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Toon resultaten
-            </button>
-          )}
+            {step === 2 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (studiesForStep3.length === 0 || studiesWithRefinement.length === 0) {
+                    setStep(4);
+                  } else {
+                    setStep(3);
+                  }
+                }}
+                style={{
+                  minHeight: 46,
+                  padding: "12px 20px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: COLORS.primaryDark,
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                {studiesForStep3.length === 0 || studiesWithRefinement.length === 0
+                  ? "Resultaat"
+                  : "Verder"}
+              </button>
+            )}
 
-          {step === 4 && (
-            <button
-              type="button"
-              onClick={resetAll}
-              style={{
-                padding: "12px 20px",
-borderRadius: 999,
-                border: "none",
-                background: COLORS.black,
-                color: "white",
-                cursor: "pointer",
-                fontWeight: 700
-              }}
-            >
-              Nieuwe screening
-            </button>
-          )}
+            {step === 3 && (
+              <button
+                type="button"
+                onClick={() => setStep(4)}
+                style={{
+                  minHeight: 46,
+                  padding: "12px 20px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: COLORS.primaryDark,
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Resultaat
+              </button>
+            )}
+
+            {step === 4 && (
+              <button
+                type="button"
+                onClick={resetAll}
+                style={{
+                  minHeight: 46,
+                  padding: "12px 20px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: COLORS.black,
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: 700,
+                }}
+              >
+                Nieuwe screening
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </main>
