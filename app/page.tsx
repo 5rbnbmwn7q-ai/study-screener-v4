@@ -368,10 +368,16 @@ const studiesWithGate = useMemo(() => {
   };
 
   const resetAll = () => {
-    setStep(1);
-    setProblems([]);
-    setAnswers({});
-  };
+  setStep(1);
+  setProblems([]);
+  setAnswers({});
+};
+
+const handleReset = () => {
+  if (confirm("Nieuwe screening starten? Huidige gegevens gaan verloren.")) {
+    resetAll();
+  }
+};
 
   const canGoFromStep1 = problems.length > 0;
 
@@ -387,7 +393,7 @@ const studiesWithGate = useMemo(() => {
       style={{
         minHeight: "100vh",
         background: "linear-gradient(to bottom, #f5fbfe 0%, #f8fafc 100%)",
-        fontFamily: "Arial, sans-serif",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
         color: COLORS.text,
       }}
     >
@@ -418,36 +424,67 @@ const studiesWithGate = useMemo(() => {
             }}
           >
             <div>
-              <div
-                style={{
-                  fontSize: 28,
-                  fontWeight: 900,
-                  letterSpacing: -0.6,
-                  color: COLORS.primaryDark,
-                }}
-              >
-                StudyBuddy
-              </div>
-              <div
-                style={{
-                  height: 4,
-                  width: 72,
-                  borderRadius: 4,
-                  background: "linear-gradient(90deg, #37C5F3, #D7263D)",
-                  marginTop: 6,
-                }}
-              />
-            </div>
+  <button
+    onClick={handleReset}
+    style={{
+      fontSize: 28,
+      fontWeight: 900,
+      letterSpacing: -0.6,
+      color: COLORS.primaryDark,
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      padding: 0,
+    }}
+  >
+    StudyBuddy
+  </button>
 
-            <div
-              style={{
-                fontSize: 14,
-                color: COLORS.textSoft,
-                fontWeight: 700,
-              }}
-            >
-              Stap {step} van 4 · {stepTitles[step]}
-            </div>
+  <div
+    style={{
+      height: 4,
+      width: 72,
+      borderRadius: 4,
+      background: "linear-gradient(90deg, #37C5F3, #D7263D)",
+      marginTop: 6,
+    }}
+  />
+</div>
+
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  }}
+>
+  <div
+    style={{
+      fontSize: 14,
+      color: COLORS.textSoft,
+      fontWeight: 700,
+    }}
+  >
+    Stap {step} van 4 · {stepTitles[step]}
+  </div>
+
+  <button
+    onClick={handleReset}
+    style={{
+      padding: "8px 14px",
+      borderRadius: 999,
+      border: `1px solid ${COLORS.border}`,
+      background: "white",
+      fontWeight: 700,
+      cursor: "pointer",
+      fontSize: 13,
+      color: COLORS.text,
+    }}
+  >
+    Nieuwe screening
+  </button>
+</div>
           </div>
 
           <div
@@ -522,7 +559,7 @@ const studiesWithGate = useMemo(() => {
                 background: COLORS.surface,
                 borderRadius: 24,
                 padding: 20,
-                boxShadow: "0 10px 35px rgba(15, 23, 42, 0.06)",
+                boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
               }}
             >
               <div
@@ -619,7 +656,7 @@ const studiesWithGate = useMemo(() => {
                       padding: 16,
                       opacity: gateStatus.status === "fail" ? 0.45 : 1,
                       transition: "all 0.2s ease",
-                      boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                     }}
                   >
                     <div
@@ -793,7 +830,7 @@ const studiesWithGate = useMemo(() => {
                         padding: 16,
                         opacity: liveResult.tone === "red" ? 0.65 : 1,
                         transition: "all 0.2s ease",
-                        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+                        boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                       }}
                     >
                       <div
@@ -952,7 +989,7 @@ const studiesWithGate = useMemo(() => {
                       background: styles.bg,
                       borderRadius: 24,
                       padding: 18,
-                      boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                     }}
                   >
                     <div
@@ -1116,10 +1153,11 @@ const studiesWithGate = useMemo(() => {
                   padding: "12px 20px",
                   borderRadius: 999,
                   border: "none",
-                  background: COLORS.primaryDark,
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #37C5F3, #0EA5E9)",
+color: "white",
+cursor: "pointer",
+fontWeight: 700,
+boxShadow: "0 4px 12px rgba(14,165,233,0.28)",
                 }}
               >
                 {studiesForStep3.length === 0 || studiesWithRefinement.length === 0
@@ -1137,10 +1175,11 @@ const studiesWithGate = useMemo(() => {
                   padding: "12px 20px",
                   borderRadius: 999,
                   border: "none",
-                  background: COLORS.primaryDark,
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: 700,
+                  background: "linear-gradient(135deg, #37C5F3, #0EA5E9)",
+color: "white",
+cursor: "pointer",
+fontWeight: 700,
+boxShadow: "0 4px 12px rgba(14,165,233,0.28)",
                 }}
               >
                 Resultaat
