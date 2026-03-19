@@ -4,19 +4,7 @@ import { useMemo, useState } from "react";
 import { config } from "./config";
 
 type AnswerValue = "yes" | "no" | "unknown";
-type Step = 1 | 2 | 3;
-type ProblemValue =
-  | "hypertension"
-  | "vkf"
-  | "acs"
-  | "pad"
-  | "dyslipidemia"
-  | "ascvd_obesity"
-  | "vwd"
-  | "hemophilia"
-  | "hht"
-  | "other_bleeding"
-  | "fmd";
+type Step = 1 | 2 | 3 | 4;
 
 const COLORS = {
   primary: "#37C5F3",
@@ -31,7 +19,8 @@ const COLORS = {
   no: "#DC2626",
   unknown: "#D97706",
   black: "#111111",
-  gray: "#94A3B8"
+  gray: "#94A3B8",
+  muted: "#CBD5E1"
 };
 
 const answerOptions: { value: AnswerValue; label: string; bg: string }[] = [
@@ -40,117 +29,306 @@ const answerOptions: { value: AnswerValue; label: string; bg: string }[] = [
   { value: "unknown", label: "Onbekend", bg: COLORS.unknown }
 ];
 
-const questionIdsByProblem = (problems: ProblemValue[]): string[] => {
-  const ids = new Set<string>();
+function unique<T>(items: T[]): T[] {
+  return Array.from(new Set(items));
+}
 
-  if (problems.includes("hypertension")) {
-    ids.add("ht_uncontrolled");
-    ids.add("ht_2meds");
-    ids.add("ht_diuretic");
-    ids.add("ht_recent_change");
-    ids.add("pm_medtronic_dual");
-    ids.add("bp_in_range");
-    ids.add("persistent_af");
-    ids.add("advanced_hf");
-    ids.add("egfr_lt30");
+function getQuestionMap() {
+  const map = new Map<string, any>();
+  for (const q of config.questions) {
+    map.set(q.id, q);
+  }
+  return map;
+}
+
+function evaluateAll(ids: string[], answers: Record<string, AnswerValue>) {
+  let pending = false;
+
+  for (const id of ids || []) {
+    const answer = answers[id];
+    if (answer === "no") {
+      return { status: "fail" as const };
+    }
+    if (!answer || answer === "unknown") {
+      pending = true;
+    }
   }
 
-  if (problems.includes("vkf")) {
-    ids.add("recent_af");
-    ids.add("af_acute");
-    ids.add("af_surgery");
-    ids.add("sinus");
+  return { status: pending ? ("pending" as const) : ("pass" as const) };
+}
+
+function evaluateAny(ids: string[], answers: Record<string, AnswerValue>) {
+  if (!ids || ids.length === 0) {
+    return { status: "not_needed" as const };
   }
 
-  if (problems.includes("acs")) {
-    ids.add("recent_mi");
-    ids.add("multivessel");
-    ids.add("diabetes");
-    ids.add("ckd");
-    ids.add("pad_history");
-    ids.add("mi_history");
-    ids.add("ich");
-    ids.add("gi_bleed");
-    ids.add("dialysis");
-    ids.add("recent_stroke");
+  let anyYes = false;
+  let anyUnknown = false;
+
+  for (const id of ids) {
+    const answer = answers[id];
+    if (answer === "yes") {
+      anyYes = true;
+    }
+    if (!answer || answer === "unknown") {
+      anyUnknown = true;
+    }
   }
 
-  if (problems.includes("pad")) {
-    ids.add("pad_symptoms");
-    ids.add("pad_procedure");
-    ids.add("egfr_lt30");
+  if (anyYes) return { status: "pass" as const };
+  if (anyUnknown) return { status: "pending" as const };
+  return { status: "fail" as const };
+}
+
+function getGateStatus(study: any, answers: Record<string, AnswerValue>) {
+  const allResult = evaluateAll(study.gate?.all || [], answers);
+  if (allResult.status === "fail") {
+    return {
+      status: "fail" as const,
+      reason: "Afgevallen op snelle selectie"
+    };
   }
 
-  if (problems.includes("dyslipidemia")) {
-    ids.add("triconos_secondary");
-    ids.add("triconos_primary_high");
-    ids.add("bempedoic");
-    ids.add("bempedoic_4w");
-    ids.add("statin");
-    ids.add("ezetimibe");
-    ids.add("pcsk9");
-    ids.add("inclisiran");
+  const anyResult = evaluateAny(study.gate?.any || [], answers);
+  if (anyResult.status === "fail") {
+    return {
+      status: "fail" as const,
+      reason: "Afgevallen op snelle selectie"
+    };
   }
 
-  if (problems.includes("ascvd_obesity")) {
-    ids.add("cvd");
-    ids.add("age45");
-    ids.add("bmi27");
+  if (allResult.status === "pending" || anyResult.status === "pending") {
+    return {
+      status: "pending" as const,
+      reason: "Nog onvolledige snelle selectie"
+    };
   }
 
-  if (problems.includes("vwd")) {
-    ids.add("vwd_confirmed");
+  return {
+    status: "pass" as const,
+    reason: "Snelle selectie positief"
+  };
+}
+
+function getRefinementQuestionIds(study: any) {
+  return unique([
+    ...(study.hard_exclusions || []),
+    ...(study.refinement?.all || []),
+    ...(study.refinement?.any || []),
+    ...(study.refinement?.optional || [])
+  ]);
+}
+
+function evaluateZenith(study: any, answers: Record<string, AnswerValue>) {
+  for (const ex of study.hard_exclusions || []) {
+    if (answers[ex] === "yes") {
+      return {
+        symbol: "❌",
+        label: "Waarschijnlijk niet passend",
+        reason: "Harde exclusie aanwezig",
+        tone: "red"
+      };
+    }
   }
 
-  if (problems.includes("hemophilia")) {
-    ids.add("hemophilia_confirmed");
-    ids.add("reference_center");
+  let missing = false;
+
+  const establishedCvd = answers["established_cvd"];
+
+  if (establishedCvd === "yes") {
+    return {
+      symbol: "✅",
+      label: "Sterke match",
+      reason: "Established cardiovasculair lijden aanwezig, geen harde exclusie gevonden",
+      tone: "green"
+    };
   }
 
-  if (problems.includes("hht")) {
-    ids.add("hht_present");
-    ids.add("systemic_tx");
+  if (!establishedCvd || establishedCvd === "unknown") {
+    missing = true;
   }
 
-  if (problems.includes("other_bleeding")) {
-    ids.add("other_bleeding_confirmed");
-    ids.add("reference_center");
+  const age55 = answers["zenith_age55"];
+  if (age55 === "no") {
+    return {
+      symbol: "❌",
+      label: "Waarschijnlijk niet passend",
+      reason: "Geen established CVD en leeftijd niet passend voor high-risk arm",
+      tone: "red"
+    };
+  }
+  if (!age55 || age55 === "unknown") {
+    missing = true;
   }
 
-  if (problems.includes("fmd")) {
-    ids.add("fmd_confirmed");
-    ids.add("scad_fmd");
-    ids.add("fmd_atypical");
+  const factors = [
+    "zenith_risk_age70",
+    "zenith_risk_ckd",
+    "zenith_risk_smoker",
+    "zenith_risk_vkf",
+    "zenith_risk_ntprobnp",
+    "zenith_risk_diabetes_obesity"
+  ];
+
+  const yesCount = factors.filter((id) => answers[id] === "yes").length;
+  const anyUnknown = factors.some((id) => !answers[id] || answers[id] === "unknown");
+
+  if (yesCount >= 2) {
+    return {
+      symbol: missing ? "⚠️" : "✅",
+      label: missing ? "Mogelijke match" : "Sterke match",
+      reason: missing
+        ? "Hoog-risicoprofiel waarschijnlijk aanwezig, maar nog te verifiëren criteria"
+        : "Hoog-risicoprofiel aanwezig, geen harde exclusie gevonden",
+      tone: missing ? "orange" : "green"
+    };
   }
 
-  return Array.from(ids);
-};
+  if (anyUnknown) {
+    return {
+      symbol: "⚠️",
+      label: "Mogelijke match",
+      reason: "Nog te verifiëren of patiënt voldoet aan high-risk criteria",
+      tone: "orange"
+    };
+  }
+
+  return {
+    symbol: "❌",
+    label: "Waarschijnlijk niet passend",
+    reason: "Geen established CVD en onvoldoende high-risk criteria",
+    tone: "red"
+  };
+}
+
+function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
+  const gate = getGateStatus(study, answers);
+
+  if (gate.status === "fail") {
+    return {
+      symbol: "❌",
+      label: "Waarschijnlijk niet passend",
+      reason: gate.reason,
+      tone: "red"
+    };
+  }
+
+  if (study.id === "zenith") {
+    return evaluateZenith(study, answers);
+  }
+
+  for (const ex of study.hard_exclusions || []) {
+    if (answers[ex] === "yes") {
+      return {
+        symbol: "❌",
+        label: "Waarschijnlijk niet passend",
+        reason: "Harde exclusie aanwezig",
+        tone: "red"
+      };
+    }
+  }
+
+  let missing = gate.status === "pending";
+
+  const allResult = evaluateAll(study.refinement?.all || [], answers);
+  if (allResult.status === "fail") {
+    return {
+      symbol: "❌",
+      label: "Waarschijnlijk niet passend",
+      reason: "Essentieel criterium niet aanwezig",
+      tone: "red"
+    };
+  }
+  if (allResult.status === "pending") {
+    missing = true;
+  }
+
+  const anyQuestions = study.refinement?.any || [];
+  if (anyQuestions.length > 0) {
+    const anyResult = evaluateAny(anyQuestions, answers);
+    if (anyResult.status === "fail") {
+      return {
+        symbol: "❌",
+        label: "Waarschijnlijk niet passend",
+        reason: "Geen passend richtinggevend criterium",
+        tone: "red"
+      };
+    }
+    if (anyResult.status === "pending") {
+      missing = true;
+    }
+  }
+
+  if (missing) {
+    return {
+      symbol: "⚠️",
+      label: "Mogelijke match",
+      reason: "Nog te verifiëren criteria",
+      tone: "orange"
+    };
+  }
+
+  return {
+    symbol: "✅",
+    label: "Sterke match",
+    reason: "Kerncriteria aanwezig, geen harde exclusie gevonden",
+    tone: "green"
+  };
+}
+
+function toneStyles(tone: string) {
+  if (tone === "green") {
+    return {
+      border: "1px solid #BBF7D0",
+      bg: "#F0FDF4",
+      badgeBg: "#16A34A"
+    };
+  }
+  if (tone === "orange") {
+    return {
+      border: "1px solid #FED7AA",
+      bg: "#FFF7ED",
+      badgeBg: "#D97706"
+    };
+  }
+  return {
+    border: "1px solid #FECACA",
+    bg: "#FEF2F2",
+    badgeBg: "#DC2626"
+  };
+}
 
 export default function Home() {
   const [step, setStep] = useState<Step>(1);
-  const [problems, setProblems] = useState<ProblemValue[]>([]);
+  const [problems, setProblems] = useState<string[]>([]);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
 
-  const toggleProblem = (value: ProblemValue) => {
+  const questionMap = useMemo(() => getQuestionMap(), []);
+
+  const groupedProblems = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    for (const option of config.problemOptions) {
+      if (!groups[option.group]) groups[option.group] = [];
+      groups[option.group].push(option);
+    }
+    return groups;
+  }, []);
+
+  const candidateStudies = useMemo(() => {
+    return config.studies.filter((study) =>
+      (study.problemTags || []).some((tag: string) => problems.includes(tag))
+    );
+  }, [problems]);
+
+  const studiesForStep3 = useMemo(() => {
+    return candidateStudies.filter((study) => getGateStatus(study, answers).status !== "fail");
+  }, [candidateStudies, answers]);
+
+  const toggleProblem = (value: string) => {
     setProblems((prev) =>
-      prev.includes(value)
-        ? prev.filter((p) => p !== value)
-        : [...prev, value]
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
     );
   };
-
-  const visibleQuestions = useMemo(() => {
-    const ids = questionIdsByProblem(problems);
-    return config.questions.filter((q) => ids.includes(q.id));
-  }, [problems]);
-
-  const visibleStudies = useMemo(() => {
-    return config.studies.filter((study) =>
-      (study.problemTags || []).some((tag: string) =>
-        problems.includes(tag as ProblemValue)
-      )
-    );
-  }, [problems]);
 
   const setAnswer = (id: string, value: AnswerValue) => {
     setAnswers((prev) => ({ ...prev, [id]: value }));
@@ -160,97 +338,6 @@ export default function Home() {
     setStep(1);
     setProblems([]);
     setAnswers({});
-  };
-
-  const evaluate = (study: any) => {
-    const hardExclusions = study.hard_exclusions || [];
-    const requiresAll = study.requires_all || [];
-    const requiresAny = study.requires_any || [];
-
-    for (const ex of hardExclusions) {
-      if (answers[ex] === "yes") {
-        return {
-          symbol: "❌",
-          label: "Waarschijnlijk niet passend",
-          reason: "Harde exclusie aanwezig",
-          tone: "red"
-        };
-      }
-    }
-
-    let missing = false;
-
-    for (const req of requiresAll) {
-      if (answers[req] === "no") {
-        return {
-          symbol: "❌",
-          label: "Waarschijnlijk niet passend",
-          reason: "Essentieel criterium niet aanwezig",
-          tone: "red"
-        };
-      }
-      if (!answers[req] || answers[req] === "unknown") {
-        missing = true;
-      }
-    }
-
-    if (requiresAny.length > 0) {
-      const anyYes = requiresAny.some((r: string) => answers[r] === "yes");
-      const anyUnknown = requiresAny.some(
-        (r: string) => !answers[r] || answers[r] === "unknown"
-      );
-
-      if (!anyYes && !anyUnknown) {
-        return {
-          symbol: "❌",
-          label: "Waarschijnlijk niet passend",
-          reason: "Geen passend richtinggevend criterium",
-          tone: "red"
-        };
-      }
-
-      if (!anyYes && anyUnknown) {
-        missing = true;
-      }
-    }
-
-    if (missing) {
-      return {
-        symbol: "⚠️",
-        label: "Mogelijke match",
-        reason: "Nog te verifiëren criteria",
-        tone: "orange"
-      };
-    }
-
-    return {
-      symbol: "✅",
-      label: "Sterke match",
-      reason: "Kerncriteria aanwezig, geen harde exclusie gevonden",
-      tone: "green"
-    };
-  };
-
-  const toneStyles = (tone: string) => {
-    if (tone === "green") {
-      return {
-        border: "1px solid #BBF7D0",
-        bg: "#F0FDF4",
-        badgeBg: "#16A34A"
-      };
-    }
-    if (tone === "orange") {
-      return {
-        border: "1px solid #FED7AA",
-        bg: "#FFF7ED",
-        badgeBg: "#D97706"
-      };
-    }
-    return {
-      border: "1px solid #FECACA",
-      bg: "#FEF2F2",
-      badgeBg: "#DC2626"
-    };
   };
 
   const canGoFromStep1 = problems.length > 0;
@@ -267,7 +354,7 @@ export default function Home() {
     >
       <div
         style={{
-          maxWidth: 900,
+          maxWidth: 980,
           margin: "0 auto",
           background: COLORS.surface,
           borderRadius: 24,
@@ -288,14 +375,14 @@ export default function Home() {
           <div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 8, fontWeight: 700 }}>
             UZ Leuven – interne pre-screening tool
           </div>
-          <h1 style={{ margin: 0, fontSize: 30 }}>Study Pre-Screener V3</h1>
+          <h1 style={{ margin: 0, fontSize: 30 }}>Study Pre-Screener V4</h1>
           <div style={{ marginTop: 10, color: COLORS.textSoft, fontSize: 16 }}>
-            Snelle pre-screening met focus op hoge sensitiviteit
+            Snelle studie-specifieke triage met hoge sensitiviteit
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
               style={{
@@ -319,77 +406,44 @@ export default function Home() {
               Je kan één of meerdere opties aanduiden.
             </p>
 
-            <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
-              {config.problemOptions.map((opt: any) => {
-                const selected = problems.includes(opt.value as ProblemValue);
-                return (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => toggleProblem(opt.value as ProblemValue)}
+            <div style={{ display: "grid", gap: 22, marginTop: 18 }}>
+              {Object.entries(groupedProblems).map(([groupName, options]) => (
+                <div key={groupName}>
+                  <div
                     style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "18px 20px",
-                      borderRadius: 18,
-                      border: selected ? `2px solid ${COLORS.primaryDark}` : `1px solid ${COLORS.border}`,
-                      background: selected ? COLORS.primarySoft : "white",
+                      fontWeight: 800,
+                      fontSize: 16,
                       color: COLORS.text,
-                      fontSize: 18,
-                      fontWeight: 700,
-                      cursor: "pointer"
+                      marginBottom: 10
                     }}
                   >
-                    <div>{selected ? "✓ " : ""}{opt.label}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {step === 2 && (
-          <section>
-            <h2 style={{ marginBottom: 8 }}>2. Snelle verfijning</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Alleen relevante vragen worden getoond.
-            </p>
-
-            <div style={{ display: "grid", gap: 18, marginTop: 18 }}>
-              {visibleQuestions.map((q: any) => (
-                <div
-                  key={q.id}
-                  style={{
-                    border: `1px solid ${COLORS.border}`,
-                    borderRadius: 18,
-                    padding: 18,
-                    background: COLORS.surfaceSoft
-                  }}
-                >
-                  <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 14 }}>
-                    {q.label}
+                    {groupName}
                   </div>
 
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {answerOptions.map((opt) => {
-                      const selected = answers[q.id] === opt.value;
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {options.map((opt: any) => {
+                      const selected = problems.includes(opt.value);
                       return (
                         <button
                           key={opt.value}
                           type="button"
-                          onClick={() => setAnswer(q.id, opt.value)}
+                          onClick={() => toggleProblem(opt.value)}
                           style={{
-                            minWidth: 110,
-                            padding: "12px 16px",
-                            borderRadius: 14,
-                            border: selected ? `2px solid ${opt.bg}` : `1px solid ${COLORS.border}`,
-                            background: selected ? opt.bg : "white",
-                            color: selected ? "white" : COLORS.text,
-                            fontSize: 16,
+                            width: "100%",
+                            textAlign: "left",
+                            padding: "16px 18px",
+                            borderRadius: 18,
+                            border: selected
+                              ? `2px solid ${COLORS.primaryDark}`
+                              : `1px solid ${COLORS.border}`,
+                            background: selected ? COLORS.primarySoft : "white",
+                            color: COLORS.text,
+                            fontSize: 17,
                             fontWeight: 700,
                             cursor: "pointer"
                           }}
                         >
+                          {selected ? "✓ " : ""}
                           {opt.label}
                         </button>
                       );
@@ -401,24 +455,238 @@ export default function Home() {
           </section>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <section>
-            <h2 style={{ marginBottom: 8 }}>3. Resultaten</h2>
+            <h2 style={{ marginBottom: 8 }}>2. Snelle selectie per studie</h2>
             <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Suggesties voor verdere beoordeling door het studieteam.
+              Alleen de minimale vragen om te bepalen of een studie nog plausibel is.
             </p>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
-              {visibleStudies.map((study: any) => {
-                const result = evaluate(study);
-                const tone = toneStyles(result.tone);
+              {candidateStudies.map((study: any) => {
+                const gateStatus = getGateStatus(study, answers);
+                const styles =
+                  gateStatus.status === "pass"
+                    ? toneStyles("green")
+                    : gateStatus.status === "pending"
+                    ? toneStyles("orange")
+                    : toneStyles("red");
+
+                const gateQuestionIds = unique([
+                  ...(study.gate?.all || []),
+                  ...(study.gate?.any || [])
+                ]);
 
                 return (
                   <div
                     key={study.id}
                     style={{
-                      border: tone.border,
-                      background: tone.bg,
+                      border: styles.border,
+                      background: styles.bg,
+                      borderRadius: 18,
+                      padding: 18,
+                      opacity: gateStatus.status === "fail" ? 0.8 : 1
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "inline-block",
+                        padding: "6px 10px",
+                        borderRadius: 999,
+                        background: styles.badgeBg,
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: 13,
+                        marginBottom: 12
+                      }}
+                    >
+                      {gateStatus.status === "pass"
+                        ? "✓ Gate positief"
+                        : gateStatus.status === "pending"
+                        ? "… Nog onvolledig"
+                        : "✕ Valt af"}
+                    </div>
+
+                    <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
+                      {study.title}
+                    </div>
+                    <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
+                      {study.subtitle}
+                    </div>
+
+                    <div style={{ display: "grid", gap: 14 }}>
+                      {gateQuestionIds.map((questionId: string) => {
+                        const q = questionMap.get(questionId);
+                        if (!q) return null;
+
+                        return (
+                          <div
+                            key={questionId}
+                            style={{
+                              border: `1px solid ${COLORS.border}`,
+                              borderRadius: 14,
+                              padding: 14,
+                              background: "white"
+                            }}
+                          >
+                            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
+                              {q.label}
+                            </div>
+
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              {answerOptions.map((opt) => {
+                                const selected = answers[questionId] === opt.value;
+                                return (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setAnswer(questionId, opt.value)}
+                                    style={{
+                                      minWidth: 105,
+                                      padding: "10px 14px",
+                                      borderRadius: 12,
+                                      border: selected
+                                        ? `2px solid ${opt.bg}`
+                                        : `1px solid ${COLORS.border}`,
+                                      background: selected ? opt.bg : "white",
+                                      color: selected ? "white" : COLORS.text,
+                                      fontWeight: 700,
+                                      cursor: "pointer"
+                                    }}
+                                  >
+                                    {opt.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {step === 3 && (
+          <section>
+            <h2 style={{ marginBottom: 8 }}>3. Verfijning voor overblijvende studies</h2>
+            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
+              Alleen studies die de snelle selectie overleven, worden verder uitgediept.
+            </p>
+
+            <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
+              {studiesForStep3.map((study: any) => {
+                const refinementIds = getRefinementQuestionIds(study);
+
+                return (
+                  <div
+                    key={study.id}
+                    style={{
+                      border: `1px solid ${COLORS.border}`,
+                      background: COLORS.surfaceSoft,
+                      borderRadius: 18,
+                      padding: 18
+                    }}
+                  >
+                    <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
+                      {study.title}
+                    </div>
+                    <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
+                      {study.subtitle}
+                    </div>
+
+                    {refinementIds.length === 0 ? (
+                      <div
+                        style={{
+                          padding: 14,
+                          borderRadius: 12,
+                          background: "white",
+                          border: `1px solid ${COLORS.border}`,
+                          color: COLORS.textSoft,
+                          fontWeight: 600
+                        }}
+                      >
+                        Geen verdere verfijning nodig voor deze studie.
+                      </div>
+                    ) : (
+                      <div style={{ display: "grid", gap: 14 }}>
+                        {refinementIds.map((questionId: string) => {
+                          const q = questionMap.get(questionId);
+                          if (!q) return null;
+
+                          return (
+                            <div
+                              key={questionId}
+                              style={{
+                                border: `1px solid ${COLORS.border}`,
+                                borderRadius: 14,
+                                padding: 14,
+                                background: "white"
+                              }}
+                            >
+                              <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>
+                                {q.label}
+                              </div>
+
+                              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                                {answerOptions.map((opt) => {
+                                  const selected = answers[questionId] === opt.value;
+                                  return (
+                                    <button
+                                      key={opt.value}
+                                      type="button"
+                                      onClick={() => setAnswer(questionId, opt.value)}
+                                      style={{
+                                        minWidth: 105,
+                                        padding: "10px 14px",
+                                        borderRadius: 12,
+                                        border: selected
+                                          ? `2px solid ${opt.bg}`
+                                          : `1px solid ${COLORS.border}`,
+                                        background: selected ? opt.bg : "white",
+                                        color: selected ? "white" : COLORS.text,
+                                        fontWeight: 700,
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {step === 4 && (
+          <section>
+            <h2 style={{ marginBottom: 8 }}>4. Resultaten</h2>
+            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
+              Suggesties voor verdere beoordeling door het studieteam.
+            </p>
+
+            <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
+              {candidateStudies.map((study: any) => {
+                const result = evaluateStudy(study, answers);
+                const styles = toneStyles(result.tone);
+
+                return (
+                  <div
+                    key={study.id}
+                    style={{
+                      border: styles.border,
+                      background: styles.bg,
                       borderRadius: 20,
                       padding: 20
                     }}
@@ -428,7 +696,7 @@ export default function Home() {
                         display: "inline-block",
                         padding: "6px 10px",
                         borderRadius: 999,
-                        background: tone.badgeBg,
+                        background: styles.badgeBg,
                         color: "white",
                         fontWeight: 700,
                         fontSize: 13,
@@ -442,16 +710,31 @@ export default function Home() {
                       {study.title}
                     </div>
 
-                    <div style={{ fontSize: 15, color: COLORS.textSoft, fontWeight: 600, marginBottom: 12 }}>
-                      {study.synopsis || ""}
+                    <div
+                      style={{
+                        fontSize: 15,
+                        color: COLORS.textSoft,
+                        fontWeight: 600,
+                        marginBottom: 12
+                      }}
+                    >
+                      {study.subtitle}
                     </div>
 
                     <div style={{ fontSize: 15, marginBottom: 10 }}>
                       <strong>Waarom:</strong> {result.reason}
                     </div>
 
+                    <div style={{ fontSize: 15, marginBottom: 10 }}>
+                      <strong>Studie:</strong> {study.synopsis}
+                    </div>
+
+                    <div style={{ fontSize: 15, marginBottom: 10 }}>
+                      <strong>Pitch naar patiënt:</strong> {study.pitch}
+                    </div>
+
                     <div style={{ fontSize: 15 }}>
-                      <strong>Contact:</strong> {study.contact || "vte@uzleuven.be"}
+                      <strong>Contact:</strong> {study.contact}
                     </div>
                   </div>
                 );
@@ -493,7 +776,7 @@ export default function Home() {
                 fontWeight: 700
               }}
             >
-              Verder
+              Verder naar snelle selectie
             </button>
           )}
 
@@ -511,11 +794,29 @@ export default function Home() {
                 fontWeight: 700
               }}
             >
-              Toon resultaten
+              Verder naar verfijning
             </button>
           )}
 
           {step === 3 && (
+            <button
+              type="button"
+              onClick={() => setStep(4)}
+              style={{
+                padding: "12px 18px",
+                borderRadius: 14,
+                border: "none",
+                background: COLORS.primaryDark,
+                color: "white",
+                cursor: "pointer",
+                fontWeight: 700
+              }}
+            >
+              Toon resultaten
+            </button>
+          )}
+
+          {step === 4 && (
             <button
               type="button"
               onClick={resetAll}
