@@ -25,7 +25,7 @@ const COLORS = {
 const answerOptions: { value: AnswerValue; label: string; bg: string }[] = [
   { value: "yes", label: "Ja", bg: COLORS.yes },
   { value: "no", label: "Nee", bg: COLORS.no },
-  { value: "unknown", label: "Onbekend", bg: COLORS.unknown },
+  { value: "unknown", label: "Onb.", bg: COLORS.unknown },
 ];
 
 function unique<T>(items: T[]): T[] {
@@ -744,33 +744,49 @@ const handleReset = () => {
                             </div>
 
                             <div
-                              style={{
-                                display: "flex",
-                                gap: 8,
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              {answerOptions.map((opt) => {
-                                const selected = answers[questionId] === opt.value;
-                                return (
-                                  <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => setAnswer(questionId, opt.value)}
-                                    style={{
-                                      minWidth: 96,
-                                      minHeight: 44,
-                                      padding: "10px 14px",
-                                      borderRadius: 999,
-                                      border: selected
-                                        ? `2px solid ${opt.bg}`
-                                        : `1px solid ${COLORS.border}`,
-                                      background: selected ? opt.bg : "white",
-                                      color: selected ? "white" : COLORS.text,
-                                      fontWeight: 700,
-                                      cursor: "pointer",
-                                    }}
-                                  >
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+  }}
+>
+  {answerOptions.map((opt) => {
+    const selected = answers[questionId] === opt.value;
+    return (
+      <button
+  key={opt.value}
+  type="button"
+  onClick={() => setAnswer(questionId, opt.value)}
+  style={{
+    width: "100%",
+    minHeight: 44,
+    padding: "10px 6px",
+    borderRadius: 999,
+
+    border: selected
+      ? `1.5px solid ${opt.bg}`
+      : "1px solid rgba(148,163,184,0.28)",
+
+    background: selected
+      ? opt.bg
+      : "rgba(255,255,255,0.7)",
+
+    color: selected ? "white" : COLORS.text,
+    fontWeight: 700,
+    fontSize: 15,
+
+    cursor: "pointer",
+
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+
+    boxShadow: selected
+      ? "0 6px 14px rgba(15,23,42,0.12)"
+      : "0 1px 2px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
+
+    transition: "all 0.15s ease",
+  }}
+>
                                     {opt.label}
                                   </button>
                                 );
@@ -926,33 +942,49 @@ const handleReset = () => {
                                 </div>
 
                                 <div
-                                  style={{
-                                    display: "flex",
-                                    gap: 8,
-                                    flexWrap: "wrap",
-                                  }}
-                                >
-                                  {answerOptions.map((opt) => {
-                                    const selected = answers[questionId] === opt.value;
-                                    return (
-                                      <button
-                                        key={opt.value}
-                                        type="button"
-                                        onClick={() => setAnswer(questionId, opt.value)}
-                                        style={{
-                                          minWidth: 96,
-                                          minHeight: 44,
-                                          padding: "10px 14px",
-                                          borderRadius: 999,
-                                          border: selected
-                                            ? `2px solid ${opt.bg}`
-                                            : `1px solid ${COLORS.border}`,
-                                          background: selected ? opt.bg : "white",
-                                          color: selected ? "white" : COLORS.text,
-                                          fontWeight: 700,
-                                          cursor: "pointer",
-                                        }}
-                                      >
+  style={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 8,
+  }}
+>
+  {answerOptions.map((opt) => {
+    const selected = answers[questionId] === opt.value;
+    return (
+      <button
+  key={opt.value}
+  type="button"
+  onClick={() => setAnswer(questionId, opt.value)}
+  style={{
+    width: "100%",
+    minHeight: 44,
+    padding: "10px 6px",
+    borderRadius: 999,
+
+    border: selected
+      ? `1.5px solid ${opt.bg}`
+      : "1px solid rgba(148,163,184,0.28)",
+
+    background: selected
+      ? opt.bg
+      : "rgba(255,255,255,0.7)",
+
+    color: selected ? "white" : COLORS.text,
+    fontWeight: 700,
+    fontSize: 15,
+
+    cursor: "pointer",
+
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+
+    boxShadow: selected
+      ? "0 6px 14px rgba(15,23,42,0.12)"
+      : "0 1px 2px rgba(15,23,42,0.05), inset 0 1px 0 rgba(255,255,255,0.8)",
+
+    transition: "all 0.15s ease",
+  }}
+>
                                         {opt.label}
                                       </button>
                                     );
