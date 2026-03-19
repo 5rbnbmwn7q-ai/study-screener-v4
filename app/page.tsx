@@ -268,22 +268,22 @@ function evaluateStudy(study: any, answers: Record<string, AnswerValue>) {
 function toneStyles(tone: string) {
   if (tone === "green") {
     return {
-      border: "1px solid #BBF7D0",
+      border: "1px solid #D1FAE5",
       bg: "#F0FDF4",
-      badgeBg: "#16A34A",
+      badgeBg: "#22C55E",
     };
   }
   if (tone === "orange") {
     return {
-      border: "1px solid #FED7AA",
-      bg: "#FFF7ED",
-      badgeBg: "#D97706",
+      border: "1px solid #FEF3C7",
+      bg: "#FFFBEB",
+      badgeBg: "#F59E0B",
     };
   }
   return {
-    border: "1px solid #FECACA",
+    border: "1px solid #FEE2E2",
     bg: "#FEF2F2",
-    badgeBg: "#DC2626",
+    badgeBg: "#EF4444",
   };
 }
 
@@ -394,7 +394,8 @@ const handleReset = () => {
         minHeight: "100vh",
         background: "linear-gradient(to bottom, #f5fbfe 0%, #f8fafc 100%)",
         fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif",
-        color: COLORS.text,
+color: COLORS.text,
+lineHeight: 1.4,
       }}
     >
       <div
@@ -461,8 +462,8 @@ const handleReset = () => {
 >
   <div
     style={{
-      fontSize: 14,
-      color: COLORS.textSoft,
+      fontSize: 13.5,
+      color: "#64748B",
       fontWeight: 700,
     }}
   >
@@ -540,6 +541,7 @@ const handleReset = () => {
           maxWidth: 1180,
           margin: "0 auto",
           padding: "18px 16px 110px",
+transition: "all 0.25s ease",
           display: "grid",
           gap: 20,
           gridTemplateColumns: "minmax(0, 1fr)",
@@ -859,7 +861,7 @@ const handleReset = () => {
                         }}
                       >
                         <div>
-                          <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.3 }}>
+                          <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: -0.3 }}>
                             {study.title}
                           </div>
                           <div style={{ color: COLORS.textSoft, marginTop: 4, fontSize: 14 }}>
@@ -1067,27 +1069,39 @@ const handleReset = () => {
                       <strong>Waarom:</strong> {result.reason}
                     </div>
 
-                    <div style={{ fontSize: 15, marginBottom: 10 }}>
-                      <strong>Studie:</strong> {study.synopsis}
-                    </div>
+                   <div
+  style={{
+    fontSize: 14,
+    marginBottom: 8,
+    color: "#334155",
+  }}
+>
+  {study.synopsis}
+</div>
 
-                    <div style={{ fontSize: 15, marginBottom: 10 }}>
-                      <strong>Pitch naar patiënt:</strong> {study.pitch}
-                    </div>
+<div
+  style={{
+    fontSize: 14,
+    marginBottom: 10,
+    color: "#475569",
+  }}
+>
+  {study.pitch}
+</div>
 
                     <div
-                      style={{
-                        fontSize: 15,
-                        marginTop: 12,
-                        padding: "10px 12px",
-                        borderRadius: 12,
-                        background: "rgba(255,255,255,0.55)",
-                        border: `1px solid ${COLORS.border}`,
-                        fontWeight: 700,
-                      }}
-                    >
-                      👉 Contacteer studieteam: {study.contact}
-                    </div>
+  style={{
+    fontSize: 14,
+    marginTop: 14,
+    padding: "12px 14px",
+    borderRadius: 14,
+    background: "linear-gradient(135deg, #EFF6FF, #E0F2FE)",
+    border: "1px solid #BFDBFE",
+    fontWeight: 700,
+  }}
+>
+  👉 Contacteer studieteam: {study.contact}
+</div>
                   </div>
                 );
               })}
