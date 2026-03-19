@@ -264,12 +264,7 @@ export const config = {
       problemTags: ["vwd", "hemophilia", "hht", "other_bleeding"],
       gate: {
         all: [],
-        any: [
-          "vwd_confirmed",
-          "hemophilia_confirmed",
-          "hht_present",
-          "other_bleeding_confirmed"
-        ]
+        any: []
       },
       hard_exclusions: [],
       refinement: {
@@ -290,7 +285,8 @@ export const config = {
       subtitle: "Nationale survey van von Willebrandziekte",
       problemTags: ["vwd"],
       gate: {
-        all: ["vwd_confirmed"]
+        all: [],
+        any: []
       },
       hard_exclusions: [],
       refinement: {
@@ -312,11 +308,11 @@ export const config = {
       problemTags: ["hemophilia", "other_bleeding"],
       gate: {
         all: [],
-        any: ["hemophilia_confirmed", "other_bleeding_confirmed"]
+        any: []
       },
       hard_exclusions: [],
       refinement: {
-        all: ["reference_center"],
+        all: [],
         any: [],
         optional: []
       },

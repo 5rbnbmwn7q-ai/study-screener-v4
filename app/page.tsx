@@ -310,11 +310,30 @@ export default function Home() {
     );
   }, [problems]);
 
+const studiesWithGate = useMemo(() => {
+  return candidateStudies.filter((study: any) => {
+    const gateIds = unique([
+      ...(study.gate?.all || []),
+      ...(study.gate?.any || []),
+    ]);
+    return gateIds.length > 0;
+  });
+}, [candidateStudies]);
+
   const studiesForStep3 = useMemo(() => {
-    return candidateStudies.filter(
-      (study) => getGateStatus(study, answers).status !== "fail"
-    );
-  }, [candidateStudies, answers]);
+  return candidateStudies.filter((study: any) => {
+    const gateIds = unique([
+      ...(study.gate?.all || []),
+      ...(study.gate?.any || []),
+    ]);
+
+    if (gateIds.length === 0) {
+      return true;
+    }
+
+    return getGateStatus(study, answers).status !== "fail";
+  });
+}, [candidateStudies, answers]);
 
   const studiesWithRefinement = useMemo(() => {
     return studiesForStep3.filter((study: any) => {
@@ -576,7 +595,7 @@ export default function Home() {
                 gap: 16,
               }}
             >
-              {candidateStudies.map((study: any) => {
+              {studiesWithGate.map((study: any) => {
                 const gateStatus = getGateStatus(study, answers);
                 const styles =
                   gateStatus.status === "pass"
@@ -1056,7 +1075,17 @@ export default function Home() {
               <button
                 type="button"
                 disabled={!canGoFromStep1}
-                onClick={() => setStep(2)}
+                onClick={() => {
+  if (studiesWithGate.length === 0) {
+    if (studiesWithRefinement.length === 0) {
+      setStep(4);
+    } else {
+      setStep(3);
+    }
+  } else {
+    setStep(2);
+  }
+}}
                 style={{
                   minHeight: 46,
                   padding: "12px 20px",
