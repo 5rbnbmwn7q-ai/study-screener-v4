@@ -615,9 +615,15 @@ const studiesWithRefinement = useMemo(() => {
         {step === 3 && (
           <section>
             <h2 style={{ marginBottom: 8 }}>3. Verfijning voor overblijvende studies</h2>
-            <p style={{ color: COLORS.textSoft, marginTop: 0 }}>
-              Alleen studies die de snelle selectie overleven, worden verder uitgediept.
-            </p>
+            <p style={{ color: COLORS.textSoft, marginTop: 0, marginBottom: 6 }}>
+  Alleen studies die de snelle selectie overleven, worden verder uitgediept.
+</p>
+<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 10 }}>
+  De status van elke studie wordt live aangepast tijdens het beantwoorden.
+</div>
+<div style={{ fontSize: 13, color: COLORS.textSoft, marginBottom: 6 }}>
+  Studies kunnen hier nog versterken, onzeker blijven of afvallen.
+</div>
 
             <div style={{ display: "grid", gap: 16, marginTop: 18 }}>
   {studiesForStep3.length === 0 ? (
@@ -644,36 +650,68 @@ const studiesWithRefinement = useMemo(() => {
         }
       }
 
-      return (
-        <div
-          key={study.id}
-          style={{
-            border: `1px solid ${COLORS.border}`,
-            background: COLORS.surfaceSoft,
-            borderRadius: 18,
-            padding: 16
-          }}
-        >
-          <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
-            {study.title}
-          </div>
-          <div style={{ color: COLORS.textSoft, marginBottom: 14 }}>
-            {study.subtitle}
-          </div>
+      const liveResult = evaluateStudy(study, answers);
+const liveStyles = toneStyles(liveResult.tone);
+
+return (
+  <div
+    key={study.id}
+    style={{
+      border: liveStyles.border,
+      background: liveStyles.bg,
+      borderRadius: 18,
+      padding: 16,
+      opacity: liveResult.tone === "red" ? 0.65 : 1,
+      transition: "all 0.2s ease"
+    }}
+  >
+    <div
+      style={{
+        display: "inline-block",
+        padding: "6px 10px",
+        borderRadius: 999,
+        background: liveStyles.badgeBg,
+        color: "white",
+        fontWeight: 700,
+        fontSize: 13,
+        marginBottom: 12
+      }}
+    >
+      {liveResult.symbol} {liveResult.label}
+    </div>
+
+    <div style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>
+      {study.title}
+    </div>
+    <div style={{ color: COLORS.textSoft, marginBottom: 10 }}>
+      {study.subtitle}
+    </div>
+
+    <div
+      style={{
+        fontSize: 14,
+        marginBottom: 14,
+        padding: "8px 10px",
+        borderRadius: 10,
+        background: "rgba(255,255,255,0.55)"
+      }}
+    >
+      <strong>Status:</strong> {liveResult.reason}
+    </div>
 
           {refinementIds.length === 0 ? (
             <div
-              style={{
-                padding: 14,
-                borderRadius: 12,
-                background: "white",
-                border: `1px solid ${COLORS.border}`,
-                color: COLORS.textSoft,
-                fontWeight: 600
-              }}
-            >
-              Geen verdere verfijning nodig voor deze studie.
-            </div>
+  style={{
+    padding: 14,
+    borderRadius: 12,
+    background: "white",
+    border: `1px solid ${COLORS.border}`,
+    color: COLORS.textSoft,
+    fontWeight: 600
+  }}
+>
+  Geen verdere verfijning nodig voor deze studie. De live status hierboven blijft wel actief.
+</div>
           ) : (
             <div style={{ display: "grid", gap: 14 }}>
               {refinementIds.map((questionId: string) => {
