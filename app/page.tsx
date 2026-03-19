@@ -343,6 +343,22 @@ export default function Home() {
     return candidateStudies.filter((study) => getGateStatus(study, answers).status !== "fail");
   }, [candidateStudies, answers]);
 
+const studiesWithRefinement = useMemo(() => {
+  return studiesForStep3.filter((study: any) => {
+    let refinementIds = getRefinementQuestionIds(study);
+
+    if (study.id === "zenith") {
+      const twoRisk = answers["zenith_2risk"];
+
+      if (!twoRisk || twoRisk === "yes") {
+        refinementIds = ["zenith_2risk"];
+      }
+    }
+
+    return refinementIds.length > 0;
+  });
+}, [studiesForStep3, answers]);
+
   const toggleProblem = (value: string) => {
     setProblems((prev) =>
       prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
